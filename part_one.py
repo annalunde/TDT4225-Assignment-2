@@ -1,4 +1,5 @@
 from DbConnector import DbConnector
+from decouple import config
 from tabulate import tabulate
 import os
 
@@ -12,8 +13,8 @@ class Program:
 
     def create_user_table(self, table_name):
         query = """CREATE TABLE IF NOT EXISTS %s (
-                   id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
-                   has_labels TINYINT)
+                   id VARCHAR(255) NOT NULL PRIMARY KEY,
+                   has_labels BOOLEAN)
                 """
         # This adds table_name to the %s variable and executes the query
         self.cursor.execute(query % table_name)
@@ -22,16 +23,14 @@ class Program:
     def create_activity_table(self, table_name):
         query = """CREATE TABLE IF NOT EXISTS %s (
                    id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
-                   user_id INT,
-                   INDEX user_ind (user_id),
-                   transportation_mode STRING,
+                   user_id VARCHAR(255),
+                   transportation_mode VARCHAR(255),
                    start_date_time DATETIME,
                    end_date_time DATETIME,
                    FOREIGN KEY (user_id)
-                    REFERENCES user(id)
+                    REFERENCES User(id)
                     ON DELETE CASCADE )
                 """
-        # DOUBLE CHECK: Should have cascade here?
 
         # This adds table_name to the %s variable and executes the query
         self.cursor.execute(query % table_name)
@@ -55,23 +54,20 @@ class Program:
         self.cursor.execute(query % table_name)
         self.db_connection.commit()
 
-    def insert_user_data(self, table_name, dataset_name):
-        print("hei")
-        for root, dirs, files in os.walk("/Users/Anna/Desktop/SDD/assignment2/dataset/dataset/Data", topdown=true):
+    def insert_user_data(self, table_name):
+        for root, dirs, files in os.walk(config("FILEPATH")):
+            with open(config("FILEPATH_LABELED_IDS"), "r") as labeled_ids:
+                labeled_ids = [ids.strip() for ids in labeled_ids]
 
-            print(root)
-
-            # print(dirs)
-
-        with open("dataset/dataset/labeled_ids.txt", "r") as labeled_ids:
-            for ids in labeled_ids:
-                stripped_id = ids.strip()
-
+                for user_id in dirs:
+                    has_labels = user_id in labeled_ids
+                    query = """ INSERT INTO %s (id, has_labels) VALUES ('%s', %s) """
+                    self.cursor.execute(
+                        query % (table_name, user_id, has_labels))
+                self.db_connection.commit()
+                break
             # Take note that the name is wrapped in '' --> '%s' because it is a string,
             # while an int would be %s etc
-            #query = "INSERT INTO %s (name) VALUES ('%s')"
-            #self.cursor.execute(query % (table_name, name))
-            # self.db_connection.commit()
 
     def fetch_data(self, table_name):
         query = "SELECT * FROM %s"
@@ -101,10 +97,10 @@ def main():
         program = Program()
 
         program.create_user_table(table_name="User")
-        program.insert_user_data(
-            table_name="User", dataset_name="dataset/dataset/Data")
+        # program.insert_user_data(table_name="User")
+        # program.fetch_data(table_name="User")
 
-        # program.create_activity_table(table_name="Activity")
+        program.create_activity_table(table_name="Activity")
 
         # program.create_trackpoint_table(table_name="TrackPoint")
 
