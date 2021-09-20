@@ -1,0 +1,17 @@
+PART ONE - DATA CLEANING
+- config tables
+
+FREDAG
+- data cleaning
+    - activity table
+        - check that the plt files do not exceed 2500 trackpoints (lines) excluding headers
+        - transportation mode must match exactly both start and end time for activity
+        - Start_time and end_time for activities can be found by looking at the date and time for the first and last trackpoint in each .plt-file
+        - Remember to keep track of activity-ids when inserting trackpoints, so that each trackpoint has the correct foreign key to the Activity table
+        - When extracting transportation_mode from the labels.txt files, remember that you only have to consider the user-ids found in the labeled_ids.txt, as they are the only users where transportation_mode may not be null.
+    - trackpoint table
+        - convert trackpoint field 6 and 7 to datetime
+
+
+PART TWO - QUERIES
+
