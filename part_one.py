@@ -76,17 +76,16 @@ class Program:
             labeled_ids = [ids.strip() for ids in labeled_ids]
 
         for _, dirs, _ in os.walk(config("FILEPATH")):
-            for user_id in dirs:
+            print(dirs)
+            for user_id in ['135']:
                 filepath = config("FILEPATH") + "/" + user_id + "/Trajectory"
                 i = 0
                 for _, _, files in os.walk(filepath):
                     for f in files:
-                        print(f)
                         df = pd.read_csv(filepath + "/" + f,
                                          delimiter="\n", skiprows=6, header=None)
                         if df.shape[0] > 2500:
                             continue
-
                         df2 = df.iloc[[0, -1]]
                         d_start = df2.iloc[0, 0].split(",")
                         dt_start = d_start[-2] + " " + d_start[-1]
