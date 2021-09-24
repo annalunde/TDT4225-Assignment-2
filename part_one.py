@@ -218,9 +218,6 @@ def main():
         program.create_trackpoint_table(table_name="TrackPoint")
         program.insert_trackpoint_data(table_name="TrackPoint")
 
-        # _ = program.fetch_data(table_name="Person")
-        # program.drop_table(table_name="Person")
-        # Check that the table is dropped
         program.show_tables()
 
     except Exception as e:
