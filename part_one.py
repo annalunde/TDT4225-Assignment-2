@@ -79,24 +79,23 @@ class Program:
             for user_id in dirs:
                 filepath = config("FILEPATH") + "/" + user_id + "/Trajectory"
                 i = 0
-                for root, direct, files in os.walk(filepath):
+                for _, _, files in os.walk(filepath):
                     for f in files:
+                        print(f)
                         df = pd.read_csv(filepath + "/" + f,
                                          delimiter="\n", skiprows=6, header=None)
                         if df.shape[0] > 2500:
                             continue
-                        df2 = df.iloc[[0, -1]]
 
-                        d_start = df2.iloc[0].split(",")
+                        df2 = df.iloc[[0, -1]]
+                        d_start = df2.iloc[0, 0].split(",")
                         dt_start = d_start[-2] + " " + d_start[-1]
                         start_time = datetime.datetime.strptime(
                             dt_start, '%Y-%m-%d %H:%M:%S')
-                        d_end = list(df2.iloc[-1]).split(",")
+                        d_end = df2.iloc[-1, 0].split(",")
                         dt_end = d_end[-2] + " " + d_end[-1]
                         end_time = datetime.datetime.strptime(
                             dt_end, '%Y-%m-%d %H:%M:%S')
-
-                        print(d_end)
 
                         if user_id in labeled_ids:
                             labels_filepath = config(
