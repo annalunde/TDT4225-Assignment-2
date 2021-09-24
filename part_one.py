@@ -4,7 +4,10 @@ from tabulate import tabulate
 import datetime
 import numpy as np
 import pandas as pd
+import json
 import os
+from os import listdir
+from os.path import isfile, join
 
 
 class Program:
@@ -48,7 +51,7 @@ class Program:
                    date_days DOUBLE,
                    date_time DATETIME,
                    FOREIGN KEY (activity_id)
-                    REFERENCES activity(id)
+                    REFERENCES Activity(id)
                     ON DELETE CASCADE 
                    )
                 """
@@ -72,69 +75,106 @@ class Program:
             # while an int would be %s etc
 
     def insert_activity_data(self, table_name):
+        activity_ids = dict()
         with open(config("FILEPATH_LABELED_IDS"), "r") as labeled_ids:
             labeled_ids = [ids.strip() for ids in labeled_ids]
 
-        for _, dirs, _ in os.walk(config("FILEPATH")):
+            dirs = [directory for directory in listdir(
+                    config("FILEPATH")) if not isfile(join(config("FILEPATH"), directory))]
+            counter = 1
             for user_id in dirs:
+                print(user_id)
                 filepath = config("FILEPATH") + "/" + user_id + "/Trajectory"
-                i = 0
-                for _, _, files in os.walk(filepath):
-                    for f in files:
-                        print(f)
-                        df = pd.read_csv(filepath + "/" + f,
-                                         delimiter="\n", skiprows=6, header=None)
-                        if df.shape[0] > 2500:
-                            continue
+                files = [f for f in listdir(
+                    filepath) if isfile(join(filepath, f))]
 
-                        df2 = df.iloc[[0, -1]]
-                        d_start = df2.iloc[0, 0].split(",")
-                        dt_start = d_start[-2] + " " + d_start[-1]
-                        start_time = datetime.datetime.strptime(
-                            dt_start, '%Y-%m-%d %H:%M:%S')
-                        d_end = df2.iloc[-1, 0].split(",")
-                        dt_end = d_end[-2] + " " + d_end[-1]
-                        end_time = datetime.datetime.strptime(
-                            dt_end, '%Y-%m-%d %H:%M:%S')
+                for f in files:
 
-                        if user_id in labeled_ids:
-                            labels_filepath = config(
-                                "FILEPATH") + user_id + "/labels.txt"
-                            df_labels = pd.read_csv(labeled_filepath)
-                            print(df_labels)
+                    df = pd.read_csv(filepath + "/" + f,
+                                     delimiter="\n", skiprows=6, header=None)
 
-                    i += 1
-                    if i == 1:
-                        break
-                break
-            break
+                    if df.shape[0] > 2500:
+                        continue
 
-            """
+                    key = user_id + "-" + f
+                    activity_ids[key] = counter
+                    counter += 1
 
-            for user_id in dirs:
-                has_labels = user_id in labeled_ids
-                query =  INSERT INTO %s (id, has_labels) VALUES ('%s', %s) 
-                self.cursor.execute(
-                    query % (table_name, user_id, has_labels))
-            self.db_connection.commit()
-            break
-            """
-            # Take note that the name is wrapped in '' --> '%s' because it is a string,
-            # while an int would be %s etc
+                    df2 = df.iloc[[0, -1]]
+                    d_start = df2.iloc[0, 0].split(",")
+                    dt_start = d_start[-2] + " " + d_start[-1]
+                    start_time = datetime.datetime.strptime(
+                        dt_start, '%Y-%m-%d %H:%M:%S')
+                    d_end = df2.iloc[-1, 0].split(",")
+                    dt_end = d_end[-2] + " " + d_end[-1]
+                    end_time = datetime.datetime.strptime(
+                        dt_end, '%Y-%m-%d %H:%M:%S')
 
-            """
-                   user_id VARCHAR(255),
-                   transportation_mode VARCHAR(255),
-                   start_date_time DATETIME,
-                   end_date_time DATETIME,
-            """
+                    transportation_mode = None
+                    if user_id in labeled_ids:
+                        labels_filepath = config(
+                            "FILEPATH") + "/" + user_id + "/labels.txt"
+                        df_labels = pd.read_csv(
+                            labels_filepath, delimiter="\t")
 
-            # transportation mode must match exactly both start and end time for activity
-            # Remember to keep track of activity-ids when inserting trackpoints, so that each trackpoint has the correct foreign key to the Activity table
+                        for _, row in df_labels.iterrows():
+                            trckpt_s = row["Start Time"]
+                            trckpt_e = row["End Time"]
+                            start_time_trckpt = datetime.datetime.strptime(
+                                trckpt_s, '%Y/%m/%d %H:%M:%S')
+                            end_time_trckpt = datetime.datetime.strptime(
+                                trckpt_e, '%Y/%m/%d %H:%M:%S')
 
-    def fetch_data(self, table_name):
-        query = "SELECT * FROM %s"
-        self.cursor.execute(query % table_name)
+                            if start_time == start_time_trckpt and end_time == end_time_trckpt:
+                                transportation_mode = row["Transportation Mode"]
+
+                    query = """ INSERT INTO %s (user_id, transportation_mode,start_date_time,end_date_time) VALUES ('%s', '%s', '%s', '%s')  """
+                    self.cursor.execute(
+                        query % (table_name, user_id, transportation_mode, start_time, end_time))
+                    self.db_connection.commit()
+        json.dump(activity_ids, open(
+            "/Users/Anna/Desktop/SDD/assignment2/activity_ids.txt", 'w'))
+
+    def insert_trackpoint_data(self, table_name):
+        dirs = [directory for directory in listdir(
+                config("FILEPATH")) if not isfile(join(config("FILEPATH"), directory))]
+
+        activity_ids = json.load(
+            open("/Users/Anna/Desktop/SDD/assignment2/activity_ids.txt"))
+        for user_id in dirs:
+            filepath = config("FILEPATH") + "/" + user_id + "/Trajectory"
+            files = [f for f in listdir(
+                filepath) if isfile(join(filepath, f))]
+
+            for f in files:
+
+                df = pd.read_csv(filepath + "/" + f,
+                                 delimiter="\n", skiprows=6, header=None)
+
+                if df.shape[0] > 2500:
+                    continue
+
+                activity_id = int(activity_ids[user_id + "-" + f])
+
+                for _, trckpnt in df.iterrows():
+                    tp = trckpnt.iloc[0].split(",")
+                    lat = float(tp[0])
+                    lon = float(tp[1])
+                    altitude = float(tp[3])
+                    date_days = float(tp[4])
+                    date_time = datetime.datetime.strptime(
+                        tp[-2] + " " + tp[-1], '%Y-%m-%d %H:%M:%S')
+
+                    query = """ INSERT INTO %s (activity_id, lat, lon, altitude, date_days, date_time) VALUES (%s, %s, %s, %s, %s,'%s')  """
+                    self.cursor.execute(
+                        query % (table_name, activity_id, lat, lon, altitude, date_days, date_time))
+                    self.db_connection.commit()
+
+    def fetch_data(self, table_name, limit):
+        query = "SELECT * FROM %s WHERE transportation_mode <> 'None' LIMIT %s"
+
+        #query = "SELECT * FROM %s LIMIT %s"
+        self.cursor.execute(query % (table_name, limit))
         rows = self.cursor.fetchall()
         print("Data from table %s, raw format:" % table_name)
         print(rows)
@@ -163,10 +203,20 @@ def main():
         # program.insert_user_data(table_name="User")
         # program.fetch_data(table_name="User")
 
-        program.create_activity_table(table_name="Activity")
-        program.insert_activity_data(table_name="Activity")
+        # program.drop_table(table_name="Activity")
+        # Check that the table is dropped
+        program.show_tables()
 
-        # program.create_trackpoint_table(table_name="TrackPoint")
+        # program.create_activity_table(table_name="Activity")
+        # program.insert_activity_data(table_name="Activity")
+        #_ = program.fetch_data(table_name="Activity", limit=1000)
+
+        program.drop_table(table_name="TrackPoint")
+        # Check that the table is dropped
+        program.show_tables()
+
+        program.create_trackpoint_table(table_name="TrackPoint")
+        program.insert_trackpoint_data(table_name="TrackPoint")
 
         # _ = program.fetch_data(table_name="Person")
         # program.drop_table(table_name="Person")
