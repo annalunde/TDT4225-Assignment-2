@@ -14,7 +14,7 @@ class QueryExecutor:
 
     def query_one(self, table_name):
         # How many users, activities and trackpoints are there in the dataset (after it is inserted into the database).
-        query = "SELECT * FROM  "
+        query = "SELECT * FROM %s "
 
         self.cursor.execute(query % table_name)
         self.db_connection.commit()

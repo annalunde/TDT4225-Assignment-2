@@ -147,7 +147,6 @@ class Program:
                 filepath) if isfile(join(filepath, f))]
 
             for f in files:
-
                 df = pd.read_csv(filepath + "/" + f,
                                  delimiter="\n", skiprows=6, header=None)
 
