@@ -8,6 +8,7 @@ import json
 import os
 from os import listdir
 from os.path import isfile, join
+from tqdm import tqdm
 
 
 class Program:
@@ -132,22 +133,21 @@ class Program:
                     self.cursor.execute(
                         query % (table_name, user_id, transportation_mode, start_time, end_time))
                     self.db_connection.commit()
-        json.dump(activity_ids, open(
-            "/Users/Anna/Desktop/SDD/assignment2/activity_ids.txt", 'w'))
+        json.dump(activity_ids, open(config(
+            "FILEPATH_ACTIVITY_IDS"), 'w'))
 
     def insert_trackpoint_data(self, table_name):
         dirs = [directory for directory in listdir(
                 config("FILEPATH")) if not isfile(join(config("FILEPATH"), directory))]
 
         activity_ids = json.load(
-            open("/Users/Anna/Desktop/SDD/assignment2/activity_ids.txt"))
-        for user_id in dirs:
+            open(config("FILEPATH_ACTIVITY_IDS")))
+        for user_id in tqdm(dirs, colour='#39ff14'):
             filepath = config("FILEPATH") + "/" + user_id + "/Trajectory"
             files = [f for f in listdir(
                 filepath) if isfile(join(filepath, f))]
 
             for f in files:
-
                 df = pd.read_csv(filepath + "/" + f,
                                  delimiter="\n", skiprows=6, header=None)
 
