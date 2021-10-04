@@ -177,9 +177,7 @@ class Program:
                 self.db_connection.commit()
 
     def fetch_data(self, table_name, limit):
-        query = "SELECT * FROM %s WHERE transportation_mode <> 'None' LIMIT %s"
-
-        #query = "SELECT * FROM %s LIMIT %s"
+        query = "SELECT * FROM %s LIMIT %s"
         self.cursor.execute(query % (table_name, limit))
         rows = self.cursor.fetchall()
         print("Data from table %s, raw format:" % table_name)
@@ -217,12 +215,14 @@ def main():
         # program.insert_activity_data(table_name="Activity")
         #_ = program.fetch_data(table_name="Activity", limit=1000)
 
-        program.drop_table(table_name="TrackPoint")
+        # program.drop_table(table_name="TrackPoint")
         # Check that the table is dropped
         program.show_tables()
 
-        program.create_trackpoint_table(table_name="TrackPoint")
-        program.insert_trackpoint_data(table_name="TrackPoint")
+        program.fetch_data(table_name="TrackPoint", limit=100)
+
+        # program.create_trackpoint_table(table_name="TrackPoint")
+        # program.insert_trackpoint_data(table_name="TrackPoint")
 
         program.show_tables()
 
