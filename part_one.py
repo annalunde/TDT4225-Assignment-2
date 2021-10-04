@@ -8,7 +8,7 @@ import json
 import os
 from os import listdir
 from os.path import isfile, join
-from tqdm import tqdm
+from tqdm import tqdm  # for progressbar on importing Trackpoint data
 
 
 class Program:
@@ -82,9 +82,11 @@ class Program:
 
             dirs = [directory for directory in listdir(
                     config("FILEPATH")) if not isfile(join(config("FILEPATH"), directory))]
+
+            # a counter used for keeping track of the activity id given in the database that matches the filename. Used later when inserting trackpoint data
             counter = 1
+
             for user_id in dirs:
-                print(user_id)
                 filepath = config("FILEPATH") + "/" + user_id + "/Trajectory"
                 files = [f for f in listdir(
                     filepath) if isfile(join(filepath, f))]
@@ -94,6 +96,7 @@ class Program:
                     df = pd.read_csv(filepath + "/" + f,
                                      delimiter="\n", skiprows=6, header=None)
 
+                    # does not insert activities where there are more than 2500 trackpoints
                     if df.shape[0] > 2500:
                         continue
 
@@ -126,6 +129,7 @@ class Program:
                             end_time_trckpt = datetime.datetime.strptime(
                                 trckpt_e, '%Y/%m/%d %H:%M:%S')
 
+                            # only include labeled data (transportation mode) where the start time and end time match
                             if start_time == start_time_trckpt and end_time == end_time_trckpt:
                                 transportation_mode = row["Transportation Mode"]
 
@@ -141,9 +145,9 @@ class Program:
                 config("FILEPATH")) if not isfile(join(config("FILEPATH"), directory))]
 
         activity_ids = json.load(
-            open(config("FILEPATH_ACTIVITY_IDS")))
+            open(config("FILEPATH_ACTIVITY_IDS")))  # fetches the activity_ids dictionary created when importing the activity data
 
-        for user_id in tqdm(dirs, colour='#39ff14'):
+        for user_id in tqdm(dirs, colour='#39ff14'):  # progressbar on importing data
             filepath = config("FILEPATH") + "/" + user_id + "/Trajectory"
             files = [f for f in listdir(
                 filepath) if isfile(join(filepath, f))]
@@ -152,9 +156,11 @@ class Program:
                 df = pd.read_csv(filepath + "/" + f,
                                  delimiter="\n", skiprows=6, header=None)
 
+                # does not insert trackpoint data where there are more than 2500 trackpoints in one file
                 if df.shape[0] > 2500:
                     continue
 
+                # fetches the activity id from the activity_ids dictionary written to a file when inserting the activity data
                 activity_id = int(activity_ids[user_id + "-" + f])
 
                 data = []
@@ -172,8 +178,8 @@ class Program:
                         (activity_id, lat, lon, altitude, date_days, date_time))
 
                 query = """ INSERT INTO TrackPoint (activity_id, lat, lon, altitude, date_days, date_time) VALUES (%s, %s, %s, %s, %s,%s)  """
-                self.cursor.executemany(query, data)
-                # query % (table_name, activity_id, lat, lon, altitude, date_days, date_time))
+                self.cursor.executemany(
+                    query, data)  # inserts up to 2500 rows at a time, to increase efficiency
                 self.db_connection.commit()
 
     def fetch_data(self, table_name, limit):
@@ -203,26 +209,22 @@ def main():
     try:
         program = Program()
 
+        program.show_tables()
+
+        # User Table
         program.create_user_table(table_name="User")
         # program.insert_user_data(table_name="User")
         # program.fetch_data(table_name="User")
 
-        # program.drop_table(table_name="Activity")
-        # Check that the table is dropped
-        program.show_tables()
-
-        # program.create_activity_table(table_name="Activity")
+        # Activity Table
+        program.create_activity_table(table_name="Activity")
         # program.insert_activity_data(table_name="Activity")
         #_ = program.fetch_data(table_name="Activity", limit=1000)
 
-        # program.drop_table(table_name="TrackPoint")
-        # Check that the table is dropped
-        program.show_tables()
-
-        program.fetch_data(table_name="TrackPoint", limit=100)
-
-        # program.create_trackpoint_table(table_name="TrackPoint")
+        # Trackpoint Table
+        program.create_trackpoint_table(table_name="TrackPoint")
         # program.insert_trackpoint_data(table_name="TrackPoint")
+        #program.fetch_data(table_name="TrackPoint", limit=100)
 
         program.show_tables()
 
