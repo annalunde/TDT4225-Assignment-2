@@ -64,7 +64,7 @@ class QueryExecutor:
     def query_four(self, table_name):
         """
         Find the number of users that have started the activity in one day and ended the activity the next day.
-        TODO : Write Assuming counting number of distinct users
+        NOTE : We assuming counting number of distinct users
         """
 
         query = "SELECT COUNT(DISTINCT user_id) as NumUsers " \
@@ -80,7 +80,7 @@ class QueryExecutor:
         """
         Find activities that are registered multiple times. You should find the query
         even if you get zero results.
-        TODO in report: discuss whether transportation_mode should be included here.
+        NOTE: We inlcude transportation_mode
         """
         query = "SELECT user_id, transportation_mode, start_date_time, end_date_time, COUNT(*) AS NumDuplicates " \
                 "FROM %s " \
@@ -131,7 +131,7 @@ class QueryExecutor:
     def query_seven(self, table_name_activities):
         """
         Find all users that have never taken a taxi.
-        TODO: we only consider labeled activities, but not all activities for that user have to be labeled to consider that user to never have taken a taxi
+        NOTE: We only consider labeled activities, but not all activities for that user have to be labeled to consider that user to never have taken a taxi
         """
 
         query = "SELECT user_id " \
@@ -163,7 +163,7 @@ class QueryExecutor:
     def query_nine_a(self, table_name_activities):
         """
         a) Find the year and month with the most activities.
-        NOTE: I assume that if activities start in one month (year) and end the next month (year)
+        NOTE: We assume that if activities start in one month (year) and end the next month (year)
         (e.g., start 30th december and end 1st january), they are counted regarding to the start_date_time
         """
         query = "SELECT YEAR(start_date_time) as Year, MONTH(start_date_time) as Month, COUNT(*) AS ActivityCount  " \
@@ -306,13 +306,12 @@ def main():
         _ = executor.query_nine_b(table_name_activities="Activity")
         _ = executor.query_ten(
             table_name_activities="Activity", table_name_trackpoints="TrackPoint")
-        """
         _ = executor.query_eleven(
             table_name_activities="Activity", table_name_trackpoints="TrackPoint")
-        """
         _ = executor.query_twelve(
             table_name_activity="Activity", table_name_trackpoint="TrackPoint")
         """
+
     except Exception as e:
         print("ERROR: Failed to use database:", e)
     finally:
