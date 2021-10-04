@@ -105,7 +105,6 @@ class QueryExecutor:
                 "where t1.user_id != t2.user_id " \
                 "AND ABS(TIMESTAMPDIFF(SECOND,t1.date_time, t2.date_time)) <= 60" \
 
-
         self.cursor.execute(query % (table_name_activities,
                                      table_name_trackpoints))
         rows = self.cursor.fetchall()
@@ -118,14 +117,11 @@ class QueryExecutor:
                     user_dict[row[0]].append(row[3])
                 else:
                     user_dict[row[0]] = [row[3]]
-
         users = 0
         for value in users_dict.values():
             users += len(value)
-
         users = users/2
         print(users)
-
         return users
 
     def query_seven(self, table_name_activities):
@@ -299,7 +295,7 @@ def main():
         _ = executor.query_four(table_name="Activity")
         _ = executor.query_five(table_name_activities="Activity")
         _ = executor.query_six(
-            table_name_activities="Activity", table_name_trackpoints="TrackPoint") 
+            table_name_activities="Activity", table_name_trackpoints="TrackPoint")
         _ = executor.query_seven(table_name_activities="Activity")
         _ = executor.query_eight(table_name="Activity")
         _ = executor.query_nine_a(table_name_activities="Activity")
@@ -308,9 +304,9 @@ def main():
             table_name_activities="Activity", table_name_trackpoints="TrackPoint")
         _ = executor.query_eleven(
             table_name_activities="Activity", table_name_trackpoints="TrackPoint")
+        """
         _ = executor.query_twelve(
             table_name_activity="Activity", table_name_trackpoint="TrackPoint")
-        """
 
     except Exception as e:
         print("ERROR: Failed to use database:", e)
