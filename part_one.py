@@ -8,6 +8,7 @@ import json
 import os
 from os import listdir
 from os.path import isfile, join
+from tqdm import tqdm
 
 
 class Program:
@@ -132,16 +133,17 @@ class Program:
                     self.cursor.execute(
                         query % (table_name, user_id, transportation_mode, start_time, end_time))
                     self.db_connection.commit()
-        json.dump(activity_ids, open(
-            "/Users/Anna/Desktop/SDD/assignment2/activity_ids.txt", 'w'))
+        json.dump(activity_ids, open(config(
+            "FILEPATH_ACTIVITY_IDS"), 'w'))
 
     def insert_trackpoint_data(self, table_name):
         dirs = [directory for directory in listdir(
                 config("FILEPATH")) if not isfile(join(config("FILEPATH"), directory))]
 
         activity_ids = json.load(
-            open("/Users/Anna/Desktop/SDD/assignment2/activity_ids.txt"))
-        for user_id in dirs:
+            open(config("FILEPATH_ACTIVITY_IDS")))
+
+        for user_id in tqdm(dirs, colour='#39ff14'):
             filepath = config("FILEPATH") + "/" + user_id + "/Trajectory"
             files = [f for f in listdir(
                 filepath) if isfile(join(filepath, f))]
@@ -155,24 +157,27 @@ class Program:
 
                 activity_id = int(activity_ids[user_id + "-" + f])
 
-                for _, trckpnt in df.iterrows():
-                    tp = trckpnt.iloc[0].split(",")
-                    lat = float(tp[0])
-                    lon = float(tp[1])
-                    altitude = float(tp[3])
-                    date_days = float(tp[4])
-                    date_time = datetime.datetime.strptime(
-                        tp[-2] + " " + tp[-1], '%Y-%m-%d %H:%M:%S')
+                data = []
 
-                    query = """ INSERT INTO %s (activity_id, lat, lon, altitude, date_days, date_time) VALUES (%s, %s, %s, %s, %s,'%s')  """
-                    self.cursor.execute(
-                        query % (table_name, activity_id, lat, lon, altitude, date_days, date_time))
-                    self.db_connection.commit()
+                for trckpnt in df.values:
+                    tp = np.array([x.split(',')
+                                   for x in trckpnt])
+                    lat = float(tp[0][0])
+                    lon = float(tp[0][1])
+                    altitude = float(tp[0][3])
+                    date_days = float(tp[0][4])
+                    date_time = datetime.datetime.strptime(
+                        tp[0][-2] + " " + tp[0][-1], '%Y-%m-%d %H:%M:%S')
+                    data.append(
+                        (activity_id, lat, lon, altitude, date_days, date_time))
+
+                query = """ INSERT INTO TrackPoint (activity_id, lat, lon, altitude, date_days, date_time) VALUES (%s, %s, %s, %s, %s,%s)  """
+                self.cursor.executemany(query, data)
+                # query % (table_name, activity_id, lat, lon, altitude, date_days, date_time))
+                self.db_connection.commit()
 
     def fetch_data(self, table_name, limit):
-        query = "SELECT * FROM %s WHERE transportation_mode <> 'None' LIMIT %s"
-
-        #query = "SELECT * FROM %s LIMIT %s"
+        query = "SELECT * FROM %s LIMIT %s"
         self.cursor.execute(query % (table_name, limit))
         rows = self.cursor.fetchall()
         print("Data from table %s, raw format:" % table_name)
@@ -210,12 +215,14 @@ def main():
         # program.insert_activity_data(table_name="Activity")
         #_ = program.fetch_data(table_name="Activity", limit=1000)
 
-        program.drop_table(table_name="TrackPoint")
+        # program.drop_table(table_name="TrackPoint")
         # Check that the table is dropped
         program.show_tables()
 
-        program.create_trackpoint_table(table_name="TrackPoint")
-        program.insert_trackpoint_data(table_name="TrackPoint")
+        program.fetch_data(table_name="TrackPoint", limit=100)
+
+        # program.create_trackpoint_table(table_name="TrackPoint")
+        # program.insert_trackpoint_data(table_name="TrackPoint")
 
         program.show_tables()
 
