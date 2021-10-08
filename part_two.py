@@ -77,9 +77,10 @@ class QueryExecutor:
         """
 
         query = (
-            "SELECT COUNT(DISTINCT user_id) as NumUsers "
+            "SELECT user_id, COUNT(*) as NumActivites "
             "FROM %s "
-            "WHERE DATEDIFF(start_date_time, end_date_time) = -1"
+            "WHERE DATEDIFF(start_date_time, end_date_time) = -1 "
+            "GROUP BY user_id "
         )
 
         self.cursor.execute(query % (table_name))
@@ -312,7 +313,6 @@ def main():
 
         print("Executing Queries: ")
 
-        """
         _ = executor.query_one(
             table_name_users="User",
             table_name_activities="Activity",
@@ -323,19 +323,21 @@ def main():
         _ = executor.query_four(table_name="Activity")
         _ = executor.query_five(table_name_activities="Activity")
         _ = executor.query_six(
-            table_name_activities="Activity", table_name_trackpoints="TrackPoint")
+            table_name_activities="Activity", table_name_trackpoints="TrackPoint"
+        )
         _ = executor.query_seven(table_name_activities="Activity")
         _ = executor.query_eight(table_name="Activity")
         _ = executor.query_nine_a(table_name_activities="Activity")
         _ = executor.query_nine_b(table_name_activities="Activity")
         _ = executor.query_ten(
-            table_name_activities="Activity", table_name_trackpoints="TrackPoint")
+            table_name_activities="Activity", table_name_trackpoints="TrackPoint"
+        )
         _ = executor.query_eleven(
-            table_name_activities="Activity", table_name_trackpoints="TrackPoint")
+            table_name_activities="Activity", table_name_trackpoints="TrackPoint"
+        )
         _ = executor.query_twelve(
             table_name_activity="Activity", table_name_trackpoint="TrackPoint"
         )
-        """
 
     except Exception as e:
         print("ERROR: Failed to use database:", e)
