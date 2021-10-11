@@ -123,6 +123,7 @@ class Program:
         json.dump(activity_ids, open(config("FILEPATH_ACTIVITY_IDS"), "w"))
 
     def insert_trackpoint_data(self, collection_name):
+        collection = self.db[collection_name]
         counter = 1
         dirs = [
             directory
@@ -171,9 +172,10 @@ class Program:
 
     def fetch_documents(self, collection_name):
         collection = self.db[collection_name]
-        documents = collection.find({"user_id": '181'})
+        documents = collection.find({"_id": 10000})
         for doc in documents:
             pprint(doc)
+        print(collection.count())
 
     def drop_coll(self, collection_name):
         collection = self.db[collection_name]
@@ -199,11 +201,13 @@ def main():
         # program.insert_activity_documents(collection_name="Activity")
         # program.fetch_documents(collection_name="Activity")
 
-        # program.create_coll(collection_name="TrackPoint")
-        # program.show_coll()
-        # program.insert_activity_documents(collection_name="TrackPoint")
+        program.drop_coll(collection_name="TrackPoint")
 
-        # program.fetch_documents(collection_name="TrackPoint")
+        program.create_coll(collection_name="TrackPoint")
+        program.show_coll()
+        program.insert_trackpoint_data(collection_name="TrackPoint")
+
+        program.fetch_documents(collection_name="TrackPoint")
 
         program.show_coll()
     except Exception as e:
