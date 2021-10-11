@@ -6,10 +6,13 @@ __pycache__/
 # C extensions
 *.so
 
+<<<<<<< HEAD
 #data
 dataset/
 assignment2/assignment2.zip
 
+=======
+>>>>>>> afaa3e7756196c9b180e55b91f921b19de9bfdcf
 # Distribution / packaging
 .Python
 build/
