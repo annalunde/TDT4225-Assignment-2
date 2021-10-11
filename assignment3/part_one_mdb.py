@@ -123,6 +123,7 @@ class Program:
         json.dump(activity_ids, open(config("FILEPATH_ACTIVITY_IDS"), "w"))
 
     def insert_trackpoint_data(self, collection_name):
+        counter = 1
         dirs = [
             directory
             for directory in listdir(config("FILEPATH"))
@@ -160,20 +161,19 @@ class Program:
                     date_time = datetime.datetime.strptime(
                         tp[0][-2] + " " + tp[0][-1], "%Y-%m-%d %H:%M:%S"
                     )
-                    element = {"activity_id": activity_id, "lat": lat, "lon": lon,
+                    element = {"id_": counter, "activity_id": activity_id, "lat": lat, "lon": lon,
                                "altitude": altitude, "date_days": date_days, "date_time": date_time, }
-                    # NOTE did not overwrite _id on Trackpoint
                     data.append(element)
+                    counter += 1
 
                 # inserts up to 2500 documents at a time, to increase efficiency
                 collection.insert_many(data)
 
     def fetch_documents(self, collection_name):
         collection = self.db[collection_name]
-        documents = collection.find({})
-        # for doc in documents:
-        #   pprint(doc)
-        print("Length:", collection.count())
+        documents = collection.find({"user_id": '181'})
+        for doc in documents:
+            pprint(doc)
 
     def drop_coll(self, collection_name):
         collection = self.db[collection_name]
@@ -199,10 +199,12 @@ def main():
         # program.insert_activity_documents(collection_name="Activity")
         # program.fetch_documents(collection_name="Activity")
 
-        # program.create_coll(collection_name="TrackPoint")
-        # program.show_coll()
-        # program.insert_activity_documents(collection_name="TrackPoint")
-        # program.fetch_documents(collection_name="TrackPoint")
+        program.drop_coll(collection_name="TrackPoint")
+        program.create_coll(collection_name="TrackPoint")
+        program.show_coll()
+        program.insert_activity_documents(collection_name="TrackPoint")
+
+        program.fetch_documents(collection_name="TrackPoint")
 
         program.show_coll()
     except Exception as e:
