@@ -161,7 +161,7 @@ class Program:
                     date_time = datetime.datetime.strptime(
                         tp[0][-2] + " " + tp[0][-1], "%Y-%m-%d %H:%M:%S"
                     )
-                    element = {"id_": counter, "activity_id": activity_id, "lat": lat, "lon": lon,
+                    element = {"_id": counter, "activity_id": activity_id, "lat": lat, "lon": lon,
                                "altitude": altitude, "date_days": date_days, "date_time": date_time, }
                     data.append(element)
                     counter += 1
@@ -199,7 +199,6 @@ def main():
         # program.insert_activity_documents(collection_name="Activity")
         # program.fetch_documents(collection_name="Activity")
 
-        # program.drop_coll(collection_name="TrackPoint")
         # program.create_coll(collection_name="TrackPoint")
         # program.show_coll()
         # program.insert_activity_documents(collection_name="TrackPoint")
