@@ -1,4 +1,4 @@
-from DbConnector import DbConnector
+from DbConnector_MySQL import DbConnector_MySQL
 from decouple import config
 from tabulate import tabulate
 import datetime
@@ -13,7 +13,7 @@ from tqdm import tqdm  # for progressbar on importing Trackpoint data
 
 class Program:
     def __init__(self):
-        self.connection = DbConnector()
+        self.connection = DbConnector_MySQL()
         self.db_connection = self.connection.db_connection
         self.cursor = self.connection.cursor
 
@@ -68,7 +68,8 @@ class Program:
                 for user_id in dirs:
                     has_labels = user_id in labeled_ids
                     query = """ INSERT INTO %s (id, has_labels) VALUES ('%s', %s) """
-                    self.cursor.execute(query % (table_name, user_id, has_labels))
+                    self.cursor.execute(
+                        query % (table_name, user_id, has_labels))
                 self.db_connection.commit()
                 break
             # Take note that the name is wrapped in '' --> '%s' because it is a string,
@@ -90,7 +91,8 @@ class Program:
 
             for user_id in dirs:
                 filepath = config("FILEPATH") + "/" + user_id + "/Trajectory"
-                files = [f for f in listdir(filepath) if isfile(join(filepath, f))]
+                files = [f for f in listdir(
+                    filepath) if isfile(join(filepath, f))]
 
                 for f in files:
 
@@ -114,14 +116,16 @@ class Program:
                     )
                     d_end = df2.iloc[-1, 0].split(",")
                     dt_end = d_end[-2] + " " + d_end[-1]
-                    end_time = datetime.datetime.strptime(dt_end, "%Y-%m-%d %H:%M:%S")
+                    end_time = datetime.datetime.strptime(
+                        dt_end, "%Y-%m-%d %H:%M:%S")
 
                     transportation_mode = None
                     if user_id in labeled_ids:
                         labels_filepath = (
                             config("FILEPATH") + "/" + user_id + "/labels.txt"
                         )
-                        df_labels = pd.read_csv(labels_filepath, delimiter="\t")
+                        df_labels = pd.read_csv(
+                            labels_filepath, delimiter="\t")
 
                         for _, row in df_labels.iterrows():
                             trckpt_s = row["Start Time"]
@@ -192,7 +196,8 @@ class Program:
                     date_time = datetime.datetime.strptime(
                         tp[0][-2] + " " + tp[0][-1], "%Y-%m-%d %H:%M:%S"
                     )
-                    data.append((activity_id, lat, lon, altitude, date_days, date_time))
+                    data.append(
+                        (activity_id, lat, lon, altitude, date_days, date_time))
 
                 query = """ INSERT INTO TrackPoint (activity_id, lat, lon, altitude, date_days, date_time) VALUES (%s, %s, %s, %s, %s,%s)  """
                 self.cursor.executemany(

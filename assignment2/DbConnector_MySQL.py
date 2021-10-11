@@ -2,7 +2,7 @@ import mysql.connector as mysql
 from decouple import config
 
 
-class DbConnector:
+class DbConnector_MySQL:
     """
     Connects to the MySQL server on the Ubuntu virtual machine.
     Connector needs HOST, DATABASE, USER and PASSWORD to connect,

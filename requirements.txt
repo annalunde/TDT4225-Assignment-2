@@ -99,6 +99,34 @@ six==1.15.0
 spacy==2.3.5
 sqlparse==0.3.1
 srsly==1.0.5
+<<<<<<< HEAD
+tabulate==0.8.9
+tensorboard==2.4.1
+tensorboard-plugin-wit==1.8.0
+tensorflow==2.4.1
+tensorflow-estimator==2.4.0
+termcolor==1.1.0
+thinc==7.4.5
+threadpoolctl==2.1.0
+toml==0.10.1
+torch==1.7.1
+torchvision==0.8.2
+tornado==6.0.4
+tqdm==4.56.2
+traitlets==5.0.5
+typed-ast==1.4.1
+typing-extensions==3.7.4.3
+Unidecode==1.1.1
+uritemplate==3.0.1
+urllib3==1.25.11
+wasabi==0.8.2
+wcwidth==0.2.5
+Werkzeug==1.0.1
+wrapt==1.12.1
+haversine==2.5.1
+pymongo==3.12.0
+=======
+>>>>>>> afaa3e7756196c9b180e55b91f921b19de9bfdcf
 tabulate==0.8.9
 tensorboard==2.4.1
 tensorboard-plugin-wit==1.8.0
