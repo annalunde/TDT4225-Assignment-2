@@ -199,12 +199,12 @@ def main():
         # program.insert_activity_documents(collection_name="Activity")
         # program.fetch_documents(collection_name="Activity")
 
-        program.drop_coll(collection_name="TrackPoint")
-        program.create_coll(collection_name="TrackPoint")
-        program.show_coll()
-        program.insert_activity_documents(collection_name="TrackPoint")
+        # program.drop_coll(collection_name="TrackPoint")
+        # program.create_coll(collection_name="TrackPoint")
+        # program.show_coll()
+        # program.insert_activity_documents(collection_name="TrackPoint")
 
-        program.fetch_documents(collection_name="TrackPoint")
+        # program.fetch_documents(collection_name="TrackPoint")
 
         program.show_coll()
     except Exception as e:
