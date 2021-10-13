@@ -24,15 +24,6 @@ class Program:
             collection = self.db.create_collection(collection_name)
             print('Created collection: ', collection)
 
-        """
-        User collection:
-
-        User = { 
-        _id: ‘00-181’ (string) 
-        has_labels: True/False (boolean) 
-        } 
-        """
-
     def insert_user_documents(self, collection_name):
         collection = self.db[collection_name]
 
@@ -201,11 +192,11 @@ def main():
         # program.insert_activity_documents(collection_name="Activity")
         # program.fetch_documents(collection_name="Activity")
 
-        program.drop_coll(collection_name="TrackPoint")
+        # program.drop_coll(collection_name="TrackPoint")
 
-        program.create_coll(collection_name="TrackPoint")
-        program.show_coll()
-        program.insert_trackpoint_data(collection_name="TrackPoint")
+        # program.create_coll(collection_name="TrackPoint")
+        # program.show_coll()
+        # program.insert_trackpoint_data(collection_name="TrackPoint")
 
         program.fetch_documents(collection_name="TrackPoint")
 
