@@ -99,7 +99,6 @@ six==1.15.0
 spacy==2.3.5
 sqlparse==0.3.1
 srsly==1.0.5
-<<<<<<< HEAD
 tabulate==0.8.9
 tensorboard==2.4.1
 tensorboard-plugin-wit==1.8.0
@@ -125,8 +124,6 @@ Werkzeug==1.0.1
 wrapt==1.12.1
 haversine==2.5.1
 pymongo==3.12.0
-=======
->>>>>>> afaa3e7756196c9b180e55b91f921b19de9bfdcf
 tabulate==0.8.9
 tensorboard==2.4.1
 tensorboard-plugin-wit==1.8.0
