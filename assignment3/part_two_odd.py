@@ -54,7 +54,7 @@ class QueryExecutor:
         """
         Find the top 10 users with the highest number of activities.
         """
-        topp_ten_users = self.db[collection_name_activities].aggregate([
+        top_ten_users = self.db[collection_name_activities].aggregate([
 
             {"$group": {
                 "_id": "$user_id",
@@ -65,9 +65,9 @@ class QueryExecutor:
             {"$limit": 10},
         ])
 
-        pprint.pprint(list(topp_ten_users))
+        pprint.pprint(list(top_ten_users))
 
-        return topp_ten_users
+        return top_ten_users
 
     def query_five(
         self, collection_name_activities
@@ -212,7 +212,7 @@ class QueryExecutor:
         )
         """
 
-        topp_twenty_users = self.db[collection_name_activities].aggregate([
+        top_twenty_users = self.db[collection_name_activities].aggregate([
 
             {"$group": {
                 "_id": "$user_id",
@@ -223,9 +223,9 @@ class QueryExecutor:
             {"$limit": 10},
         ])
 
-        pprint.pprint(list(topp_twenty_users))
+        pprint.pprint(list(top_twenty_users))
 
-        return topp_twenty_users
+        return top_twenty_users
 
 
 def main():
