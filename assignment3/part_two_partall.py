@@ -1,6 +1,7 @@
 from datetime import datetime
 from pprint import pprint
 from DbConnector_MongoDB import DbConnector_MongoDB
+from haversine import haversine
 
 
 class QueryExecutor:
@@ -81,7 +82,7 @@ class QueryExecutor:
         person in time and space (pandemic tracking). Close is defined as the same
         minute (60 seconds) and space (100 meters).
         """
-        documents = self.db[collection_trackpoint].aggregate([
+        users_close_time = self.db[collection_trackpoint].aggregate([
             {
                 "$project": {
                     "activity_id": "$activity_id",
@@ -119,7 +120,19 @@ class QueryExecutor:
             }
         ])
 
-        pprint(list(documents))
+        potential_users = list(users_close_time)
+        location_infected = (39.97548, 116.33031)
+        users = []
+
+        for i in range(len(potential_users)):
+            location_potential = (potential_users[i]['lat'], potential_users[i]['lon'])
+            distance = haversine(location_potential, location_infected, unit="km")
+            user_id = potential_users[i]['user_id']
+            if distance < 0.1:
+                if user_id not in users:
+                    users.append(user_id)
+
+        print(users)
 
 
     def query_eight(self, collection_name):
@@ -151,10 +164,9 @@ class QueryExecutor:
 
         ])
 
-        doc = list(documents)
+        for doc in documents:
+            pprint(doc)
 
-        for i in range(len(doc)):
-            print(doc[i]['numDistinctUsers'])
 
     def query_ten(self, collection_activity, collection_trackpoint):
         """
@@ -189,9 +201,9 @@ class QueryExecutor:
             },
             {
                 "$project": {
-                    "activity_id": "$Table.activity_id",
-                    "lat": "$Table.lat",
-                    "lon": "$Table.lon",
+                    "activity_id": "$activity_id",
+                    "lat": "$lat",
+                    "lon": "$lon",
                     "start_year": {"$dateToString": {"format": "%Y","date": "$start_date_time"}},
                     "end_year": {"$dateToString": {"format": "%Y", "date": "$end_date_time"}}
                 }
@@ -215,10 +227,10 @@ def main():
         executor = QueryExecutor()
 
         print("Executing Queries: ")
-        #executor.query_two(collection_name="Activity")
+        executor.query_two(collection_name="Activity")
         #executor.query_four(collection_name="Activity")
         #executor.query_six(collection_activity="Activity", collection_trackpoint="TrackPoint")
-        executor.query_eight(collection_name="Activity")
+        #executor.query_eight(collection_name="Activity")
         #executor.query_ten(collection_activity="Activity", collection_trackpoint="TrackPoint")
 
 
