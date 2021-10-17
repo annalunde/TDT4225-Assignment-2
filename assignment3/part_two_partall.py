@@ -87,11 +87,39 @@ class QueryExecutor:
                     "activity_id": "$activity_id",
                     "lat": "$lat",
                     "lon": "$lon",
-                    "day_covid": {"$dateFromString": {"dateString": "2008-08-24 15:38:00"}},
-                    "time_difference": {"$divide": [{"$subtract": ["day_covid", "$day_time"]}, 1000]}
+                    "date_time": "$date_time",
+                    "date_covid": {"$dateFromString": {"dateString": "2008-08-24 15:38:00"}},
+                }
+            },
+            {
+                "$project": {
+                    "activity_id": "$activity_id",
+                    "lat": "$lat",
+                    "lon": "$lon",
+                    "time_difference": {"$abs": {"$divide": [{"$subtract": ["$date_covid", "$date_time"]}, 1000]}}
+                }
+            },
+            {
+                "$match": {"time_difference": {"$lt": 60}}
+            },
+            {
+                "$lookup": {
+                    "from": collection_activity,
+                    "localField": "activity_id",
+                    "foreignField": "_id",
+                    "as": "joined_table"
+                }
+            },
+            {
+                "$project": {
+                    "user_id": "$joined_table.user_id",
+                    "lat": "$lat",
+                    "lon": "$lon"
                 }
             }
         ])
+
+        pprint(list(documents))
 
 
     def query_eight(self, collection_name):
@@ -123,8 +151,10 @@ class QueryExecutor:
 
         ])
 
-        for doc in documents:
-            pprint(doc)
+        doc = list(documents)
+
+        for i in range(len(doc)):
+            print(doc[i]['numDistinctUsers'])
 
     def query_ten(self, collection_activity, collection_trackpoint):
         """
@@ -187,8 +217,8 @@ def main():
         print("Executing Queries: ")
         #executor.query_two(collection_name="Activity")
         #executor.query_four(collection_name="Activity")
-        executor.query_six(collection_activity="Activity", collection_trackpoint="TrackPoint")
-        #executor.query_eight(collection_name="Activity")
+        #executor.query_six(collection_activity="Activity", collection_trackpoint="TrackPoint")
+        executor.query_eight(collection_name="Activity")
         #executor.query_ten(collection_activity="Activity", collection_trackpoint="TrackPoint")
 
 
