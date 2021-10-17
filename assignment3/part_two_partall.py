@@ -1,3 +1,4 @@
+from datetime import datetime
 from pprint import pprint
 from DbConnector_MongoDB import DbConnector_MongoDB
 
@@ -42,12 +43,25 @@ class QueryExecutor:
             {
                 "$project": {
                     "user_id": "$user_id",
-                    "difference": {
-                        "$divide": [{"$subtract": ["$start_date_time", "$end_date_time"]}, 86400]
-                        }}
+                    "start_date": {"$dateToString": {"format": '%Y-%m-%d', "date": "$start_date_time"}},
+                    "end_date": {"$dateToString": {"format": '%Y-%m-%d', "date": "$end_date_time"}},
+                }
             },
             {
-                "$match": {"$and": [{"difference": {"$lt": -1}}, {"difference": {"$gt": -2}}]}
+                "$project": {
+                    "user_id": "$user_id",
+                    "start": {"$dateFromString": {"dateString": "$start_date"}},
+                    "end": {"$dateFromString": {"dateString": "$end_date"}},
+                }
+            },
+            {
+                "$project": {
+                    "user_id": "$user_id",
+                    "difference": {"$divide": [{"$subtract": ["$start", "$end"]}, 24 * 60 * 60 * 1000]}
+                }
+            },
+            {
+                "$match": {"difference": {"$eq": -1}}
             },
             {
                 "$group": {
@@ -59,6 +73,26 @@ class QueryExecutor:
 
         for doc in documents:
             pprint(doc)
+
+    def query_six(self, collection_activity, collection_trackpoint):
+        """
+        An infected person has been at position (lat, lon) (39.97548, 116.33031) at
+        time ‘2008-08-24 15:38:00’. Find the user_id(s) which have been close to this
+        person in time and space (pandemic tracking). Close is defined as the same
+        minute (60 seconds) and space (100 meters).
+        """
+        documents = self.db[collection_trackpoint].aggregate([
+            {
+                "$project": {
+                    "activity_id": "$activity_id",
+                    "lat": "$lat",
+                    "lon": "$lon",
+                    "day_covid": {"$dateFromString": {"dateString": "2008-08-24 15:38:00"}},
+                    "time_difference": {"$divide": [{"$subtract": ["day_covid", "$day_time"]}, 1000]}
+                }
+            }
+        ])
+
 
     def query_eight(self, collection_name):
         """
@@ -88,6 +122,7 @@ class QueryExecutor:
             }
 
         ])
+
         for doc in documents:
             pprint(doc)
 
@@ -124,15 +159,16 @@ class QueryExecutor:
             },
             {
                 "$project": {
-                    "activity_id": "$activity_id",
-                    "lat": "$lat",
-                    "lon": "$lon",
-                    "year": {"$dateToString": {"format": "%Y","date": "$date_time"}}
+                    "activity_id": "$Table.activity_id",
+                    "lat": "$Table.lat",
+                    "lon": "$Table.lon",
+                    "start_year": {"$dateToString": {"format": "%Y","date": "$start_date_time"}},
+                    "end_year": {"$dateToString": {"format": "%Y", "date": "$end_date_time"}}
                 }
             },
             {
                 "$match": {
-                    "year": {"$eq": "2008"}
+                    "$and": [{"start_year": {"$eq": "2008"}},{"end_year": {"$eq": "2008"}}]
                 }
             },
         ])
@@ -149,10 +185,11 @@ def main():
         executor = QueryExecutor()
 
         print("Executing Queries: ")
-        executor.query_two(collection_name="Activity")
-        executor.query_four(collection_name="Activity")
-        executor.query_eight(collection_name="Activity")
-        executor.query_ten(collection_activity="Activity", collection_trackpoint="TrackPoint")
+        #executor.query_two(collection_name="Activity")
+        #executor.query_four(collection_name="Activity")
+        executor.query_six(collection_activity="Activity", collection_trackpoint="TrackPoint")
+        #executor.query_eight(collection_name="Activity")
+        #executor.query_ten(collection_activity="Activity", collection_trackpoint="TrackPoint")
 
 
 
