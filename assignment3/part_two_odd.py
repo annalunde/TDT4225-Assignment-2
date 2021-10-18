@@ -164,8 +164,8 @@ class QueryExecutor:
                     "year": {"$dateToString": {"format": "%Y", "date": "$start_date_time"}},
                     "month": {"$dateToString": {"format": "%m", "date": "$start_date_time"}},
                     "user_id": "$user_id",
-                    # {"$divide": [{"$subtract": ["$end_date_time", "$start_date_time"]}, 3600000]},
-                    "duration":  "$end_date_time",
+                    "end_date_time": {"$dateToString": {"format": "%Y-%m-%d %H:%M:%S", "date": "$end_date_time"}},
+                    "start_date_time": {"$dateToString": {"format": "%Y-%m-%d %H:%M:%S", "date": "$start_date_time"}}
                 }
             },
             {
@@ -175,10 +175,23 @@ class QueryExecutor:
 
                 }
             },
+            {
+                "$project": {
+                    "user_id": "$user_id",
+                    "end_date_time": {"$dateFromString": {"dateString": "$end_date_time"}},
+                    "start_date_time": {"$dateFromString": {"dateString": "$start_date_time"}}
+                }
+            },
+            {
+                "$project": {
+                    "user_id": "$user_id",
+                    "duration": {"$divide": [{"$subtract": ["$end_date_time", "$start_date_time"]}, 60 * 60 * 1000]}
+                }
+            },
             {"$group": {
                 "_id": "$user_id", "count": {"$sum": 1}, "total": {"$sum": "$duration"}}},
             {"$sort": {"count": -1}},
-            {"$limit": 2},
+            {"$limit": 2}
 
         ])
 
