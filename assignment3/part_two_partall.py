@@ -15,7 +15,7 @@ class QueryExecutor:
         """
         Find the average, minimum and maximum number of activities per user.
         """
-        documents = self.db[collection_name].aggregate([
+        min_max_avg = self.db[collection_name].aggregate([
             {
                 "$group": {
                     "_id": "$user_id",
@@ -25,14 +25,16 @@ class QueryExecutor:
             {
                 "$group": {
                     "_id": None,
-                    "max": {"$max": "$count"},
-                    "min": {"$min": "$count"},
-                    "avg": {"$avg": "$count"}
+                    "Maximum": {"$max": "$count"},
+                    "Minimum": {"$min": "$count"},
+                    "Average": {"$avg": "$count"}
                 }
             }
         ])
-        for doc in documents:
-            pprint(doc)
+        for a in min_max_avg:
+            pprint(a)
+
+        return min_max_avg
 
     def query_four(self, collection_name):
         """
@@ -40,7 +42,7 @@ class QueryExecutor:
         NOTE : We assuming counting number of distinct users
         """
 
-        documents = self.db[collection_name].aggregate([
+        users = self.db[collection_name].aggregate([
             {
                 "$project": {
                     "user_id": "$user_id",
@@ -72,8 +74,10 @@ class QueryExecutor:
             }
         ])
 
-        for doc in documents:
-            pprint(doc)
+        for u in users:
+            pprint(u)
+
+        return users
 
     def query_six(self, collection_activity, collection_trackpoint):
         """
@@ -134,6 +138,8 @@ class QueryExecutor:
 
         print(users)
 
+        return users
+
 
     def query_eight(self, collection_name):
         """
@@ -142,7 +148,7 @@ class QueryExecutor:
         transportation mode is null.
         """
 
-        documents = self.db[collection_name].aggregate([
+        transportation_modes = self.db[collection_name].aggregate([
             {
                 "$match": {"transportation_mode": {"$ne": None}}
             },
@@ -164,9 +170,10 @@ class QueryExecutor:
 
         ])
 
-        for doc in documents:
-            pprint(doc)
+        for mode in transportation_modes:
+            pprint(mode)
 
+        return transportation_modes
 
     def query_ten(self, collection_activity, collection_trackpoint):
         """
@@ -189,9 +196,6 @@ class QueryExecutor:
             },
             {
                 "$match": {"transportation_mode": {"$eq": "walk"}}
-            },
-            {
-                "$match": {"transportation_mode": {"$ne": None}}
             },
             {
                 "$lookup": {
@@ -237,7 +241,7 @@ class QueryExecutor:
 
         print(distance)
 
-
+        return distance
 
 
 def main():
@@ -249,8 +253,8 @@ def main():
         #executor.query_two(collection_name="Activity")
         #executor.query_four(collection_name="Activity")
         #executor.query_six(collection_activity="Activity", collection_trackpoint="TrackPoint")
-        #executor.query_eight(collection_name="Activity")
-        executor.query_ten(collection_activity="Activity", collection_trackpoint="TrackPoint")
+        executor.query_eight(collection_name="Activity")
+        #executor.query_ten(collection_activity="Activity", collection_trackpoint="TrackPoint")
 
 
 
