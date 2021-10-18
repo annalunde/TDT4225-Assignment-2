@@ -199,46 +199,55 @@ class QueryExecutor:
 
         return user_most_activities
 
-    def query_eleven():
+    def query_twelve(self, collection_name_activities, collection_name_trackpoints):
         """
-        Find the top 20 users who have gained the most altitude meters.
-            1. Output should be a collection with (id, total meters gained per user).
-            2. Remember that some altitude-values are invalid
-            3. Tip: (tpn.altitude-tpn-1.altitude), tpn.altitude >tpn-1.altitude
+        Find all users who have invalid activities, and the number of invalid activities per user
+         - An invalid activity is defined as an activity with consecutive trackpoints where the timestamps deviate with at least 5 minutes.
         """
 
         """
         query = (
-            "SELECT user_id, SUM(AltitudeTPTable.altitudeGained)*0.3048 AS MetersGained "
-            "FROM %s INNER JOIN "
-            "   (SELECT id, activity_id, altitude, "
-            "   LAG(altitude) OVER (PARTITION BY activity_id) as PreviousAltitude, "
-            "   altitude - LAG(altitude) OVER(PARTITION BY activity_id) AS altitudeGained "
-            "   FROM %s "
-            "   WHERE altitude != -777 "
-            "   ) as AltitudeTPTable "
-            "ON Activity.id = AltitudeTPTable.activity_id "
-            "WHERE altitudeGained > 0 "
-            "GROUP BY user_id "
-            "ORDER BY MetersGained DESC "
-            "LIMIT 20"
-        )
-        """
+            "WITH data as (SELECT user_id, date_time, TrackPoint.id as tid, activity_id, LEAD(date_time) 
+            OVER(PARTITION BY activity_id ORDER BY TrackPoint.id ASC) AS next_date_time,
+             TIMESTAMPDIFF(MINUTE, date_time, LEAD(date_time) OVER(PARTITION BY activity_id ORDER BY TrackPoint.id ASC))
+              as difference FROM %s INNER JOIN %s on Activity.id = TrackPoint.activity_id ) "
 
-        top_twenty_users = self.db[collection_name_activities].aggregate([
+            "SELECT user_id, COUNT(DISTINCT activity_id) AS NumInvalid "
+            "FROM data "
+            "WHERE difference  >= 5 "
+            "GROUP BY user_id HAVING NumInvalid >= 1 "
+        )
+        
+
+        invalid_activities = self.db[collection_name_activities].aggregate([
+
+            {
+                "$lookup": {
+                    "from": collection_name_trackpoints,
+                    "localField": "activity_id",
+                    "foreignField": "_id",
+                    "as": "joined_table"
+                }
+            },
+            {
+                "$project": {
+                    "user_id": "$joined_table.user_id",
+                    "lat": "$lat",
+                    "lon": "$lon"
+                }
+            }
 
             {"$group": {
-                "_id": "$user_id",
-                "count": {"$sum": 1}
+                "_id": "$user_id"
             }
             },
-            {"$sort": {"count": -1}},
-            {"$limit": 10},
+            {"$match"}
         ])
 
-        pprint.pprint(list(top_twenty_users))
+        pprint.pprint(list(invalid_activities))
 
-        return top_twenty_users
+        return invalid_activities
+        """
 
 
 def main():
@@ -269,7 +278,7 @@ def main():
         _ = executor.query_nine_b(collection_name_activities="Activity")
 
         """
-        _ = executor.query_eleven(
+        _ = executor.query_twelve(
             collection_name_activities="Activity", collection_name_trackpoints="TrackPoint"
         )
         """
