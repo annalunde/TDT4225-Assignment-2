@@ -183,40 +183,59 @@ class QueryExecutor:
             "ORDER BY date_time ASC"
         )
         '''
-
-        documents = self.db[collection_activity].aggregate([
+        activities = self.db[collection_activity].aggregate([
             {
-                "$match": {"user_id": {"$eq": '112'}}
+                "$match": {"user_id": {"$eq": "112"}}
             },
             {
-                "$match": {"transportation_mode": {"$eq": 'walk'}}
+                "$match": {"transportation_mode": {"$eq": "walk"}}
+            },
+            {
+                "$match": {"transportation_mode": {"$ne": None}}
             },
             {
                 "$lookup": {
                     "from": collection_trackpoint,
                     "localField": "_id",
                     "foreignField": "activity_id",
-                    "as": "Table"
+                    "as": "joined_table"
                 }
+            },
+            {
+                "$unwind": "$joined_table"
             },
             {
                 "$project": {
-                    "activity_id": "$activity_id",
-                    "lat": "$lat",
-                    "lon": "$lon",
-                    "start_year": {"$dateToString": {"format": "%Y","date": "$start_date_time"}},
-                    "end_year": {"$dateToString": {"format": "%Y", "date": "$end_date_time"}}
+                    "activity_id": "$joined_table.activity_id",
+                    "date_time": "$joined_table.date_time",
+                    "date_year": {"$dateToString": {"format": '%Y', "date": "$joined_table.date_time"}},
+                    "lat": "$joined_table.lat",
+                    "lon": "$joined_table.lon"
                 }
             },
             {
-                "$match": {
-                    "$and": [{"start_year": {"$eq": "2008"}},{"end_year": {"$eq": "2008"}}]
-                }
+                "$match": {"date_year": {"$eq": '2008'}}
             },
+            {
+                "$sort": {"date_time": -1}
+            }
         ])
 
-        for doc in documents:
-            pprint(doc)
+        activities_list = list(activities)
+
+        activity_dict = dict()
+        for i in range(len(activities_list)):
+            if activities_list[i]['activity_id'] in activity_dict:
+                activity_dict[activities_list[i]['activity_id']].append((activities_list[i]['lat'], activities_list[i]['lon']))
+            else:
+                activity_dict[activities_list[i]['activity_id']] = [(activities_list[i]['lat'], activities_list[i]['lon'])]
+
+        distance = 0
+        for value in activity_dict.values():
+            for i in range(len(value) - 1):
+                distance += haversine(value[i], value[i + 1], unit="km")
+
+        print(distance)
 
 
 
@@ -227,11 +246,11 @@ def main():
         executor = QueryExecutor()
 
         print("Executing Queries: ")
-        executor.query_two(collection_name="Activity")
+        #executor.query_two(collection_name="Activity")
         #executor.query_four(collection_name="Activity")
         #executor.query_six(collection_activity="Activity", collection_trackpoint="TrackPoint")
         #executor.query_eight(collection_name="Activity")
-        #executor.query_ten(collection_activity="Activity", collection_trackpoint="TrackPoint")
+        executor.query_ten(collection_activity="Activity", collection_trackpoint="TrackPoint")
 
 
 
