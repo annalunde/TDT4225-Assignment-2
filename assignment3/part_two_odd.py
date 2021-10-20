@@ -207,47 +207,118 @@ class QueryExecutor:
 
         """
         query = (
-            "WITH data as (SELECT user_id, date_time, TrackPoint.id as tid, activity_id, LEAD(date_time) 
-            OVER(PARTITION BY activity_id ORDER BY TrackPoint.id ASC) AS next_date_time,
-             TIMESTAMPDIFF(MINUTE, date_time, LEAD(date_time) OVER(PARTITION BY activity_id ORDER BY TrackPoint.id ASC))
-              as difference FROM %s INNER JOIN %s on Activity.id = TrackPoint.activity_id ) "
-
-            "SELECT user_id, COUNT(DISTINCT activity_id) AS NumInvalid "
-            "FROM data "
-            "WHERE difference  >= 5 "
-            "GROUP BY user_id HAVING NumInvalid >= 1 "
+            "data as (SELECT user_id, date_time, TrackPoint.id as tid, activity_id, LEAD(date_time)
+            OVER(PARTITION BY activity_id ORDER BY TrackPoint.id ASC) AS next_date_time, TIMESTAMPDIFF(MINUTE, date_time,
+            LEAD(date_time) OVER(PARTITION BY activity_id ORDER BY TrackPoint.id ASC)) as difference) "
         )
-        
+        """
+        invalid_users = dict()
 
-        invalid_activities = self.db[collection_name_activities].aggregate([
-
-            {
-                "$lookup": {
-                    "from": collection_name_trackpoints,
-                    "localField": "activity_id",
-                    "foreignField": "_id",
-                    "as": "joined_table"
+        for user in range(1, 183):
+            print("user", user)
+            invalid_activities = self.db[collection_name_activities].aggregate([
+                {"$match": {"user_id": {"eq": user}}},
+                {
+                    "$lookup": {
+                        "from": collection_name_trackpoints,
+                        "localField": "_id",
+                        "foreignField": "activity_id",
+                        "as": "data"
+                    }
+                },
+                {
+                    "$project": {
+                        "user_id": user,
+                        "activity_id": "$data.activity_id",
+                        "date_time": "$data.date_time",
+                        "tid": "$data._id"
+                    }
+                },
+                {"$sort": {"tid": 1}},
+                {"$group": {"_id": "$activity_id", "date_time_array": {"$push": "$date_time"}}
+                 },
+                {"$addFields": {
+                    "result": {"$reduce": {
+                        # walk array of $values with $reduce operator
+                        "input": "$date_time_array",
+                        "initialValue": {
+                            "prevValue": None,
+                            "calculatedValues": [],
+                        },
+                        "in": {"$cond": {
+                            "if": {
+                                # if we do not know two neighbouring values
+                                # (first iteration)
+                                "$eq": ["$$value.prevValue", None],
+                            },
+                            "then": {
+                                # then we just skip the calculation
+                                # for current iteration
+                                "prevValue": '$$this',
+                                "calculatedValues": []
+                            },
+                            "else": {
+                                # otherwise we know two neighbouring values
+                                # and it is possible to calculate the diff now
+                                "$let": {
+                                    "vars": {
+                                        "newValue":  {
+                                            # calculate the diff
+                                            "$divide": [{"$subtract": ["$$this", "$$value.prevValue"]}, 60 * 1000]
+                                            # "$subtract": ['$$this', '$$value.prevValue'],
+                                        }
+                                    },
+                                    "in": {
+                                        "prevValue": "$$this",
+                                        "calculatedValues": {
+                                            # push the calculated value into array of results
+                                            "$concatArrays": [
+                                                "$$value.calculatedValues", [
+                                                    "$$newValue"]
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        }
+                    }
+                    }
                 }
-            },
-            {
-                "$project": {
-                    "user_id": "$joined_table.user_id",
-                    "lat": "$lat",
-                    "lon": "$lon"
-                }
-            }
+                },
+                {
+                    # restructure the output documents
+                    "$project": {
+                        "initialValues": '$date_time_array',
+                        "calculatedValues": '$result.calculatedValues',
+                        "user_id": "$user_id",
+                        "activity_id": "$data.activity_id",
+                        "tid": "$data._id"
+                    }
+                },
+                {"$match": {"calculatedValues": {"$gte": 5}}},
+                {"$group":  {"_id": "$user_id"}},
+                # {"$group": {"_id": "$activity_id"}},
+                {"$group": {"_id": 1, "count": {"$sum": 1}}},
+                {"$match": {"count": {"$gte": 1}}}
 
-            {"$group": {
-                "_id": "$user_id"
-            }
-            },
-            {"$match"}
-        ])
+            ])
+            pprint.pprint(list(invalid_activities))
 
-        pprint.pprint(list(invalid_activities))
+        # df = pd.DataFrame(list(invalid_activities))
+        """
+        all_df_real=[]
+        for doc in list(invalid_activities)[2]:
+            # print("doc", doc)
+            single_real_df=pd.DataFrame(
+                doc['user_id']['activity_id']['date_time']["tid"])
+            print(single_real_df)
+            all_df_real.append(single_real_df)
+        """
+        # result = pd.concat(all_df_real)
+        # print(all_df_real)
 
         return invalid_activities
-        """
 
 
 def main():
@@ -259,29 +330,26 @@ def main():
         print("Executing Queries: ")
 
         """
-        _ = executor.query_one(
+        _=executor.query_one(
             collection_name_users="User",
             collection_name_activities="Activity",
             collection_name_trackpoints="TrackPoint",
         )
 
+        _=executor.query_three(collection_name_activities="Activity")
 
-        _ = executor.query_three(collection_name_activities="Activity")
+        _=executor.query_five(collection_name_activities="Activity")
 
-        _ = executor.query_five(collection_name_activities="Activity")
+        _=executor.query_seven(collection_name_activities="Activity")
 
-        _ = executor.query_seven(collection_name_activities="Activity")
+        _=executor.query_nine_a(collection_name_activities="Activity")
 
-        _ = executor.query_nine_a(collection_name_activities="Activity")
-
-        """
-        _ = executor.query_nine_b(collection_name_activities="Activity")
+        _=executor.query_nine_b(collection_name_activities="Activity")
 
         """
         _ = executor.query_twelve(
             collection_name_activities="Activity", collection_name_trackpoints="TrackPoint"
         )
-        """
 
     except Exception as e:
         print("ERROR: Failed to use database:", e)
