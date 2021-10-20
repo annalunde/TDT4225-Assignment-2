@@ -243,6 +243,127 @@ class QueryExecutor:
 
         return distance
 
+    def query_eleven(self, collection_activity, collection_trackpoint):
+        user_altitudes_dict = dict()
+
+        for activity_id in range(274,275):
+            print(activity_id)
+
+            activity_altitudes = self.db[collection_trackpoint].aggregate([
+                {
+                    "$match": {"activity_id": {"$eq": activity_id}}
+                },
+                {
+                    "$match": {"altitude": {"$ne": -777}}
+                },
+                {
+                    "$group": {
+                        "_id": "$activity_id",
+                        "altitude_array": {"$push": "$altitude"}
+                    }
+                },
+                {
+                    "$addFields": {
+                        "result": {
+                            "$reduce": {
+                                "input": "$altitude_array",
+                                "initialValue": {
+                                    "prevValue": -1,
+                                    "calculatedValues": 0
+                                },
+                                "in": {
+                                    "$cond": {
+                                        "if": {
+                                            "$eq": ["$$value.prevValue", -1]
+                                        },
+                                        "then": {
+                                            "prevValue": "$$this",
+                                            "calculatedValues": 0
+                                        },
+                                        "else": {
+                                            "$let": {
+                                                "vars": {
+                                                    "newValue": {
+                                                        "$subtract": ["$$value.prevValue", "$$this"]
+                                                    }
+                                                },
+                                                "in": {
+                                                    "$cond": {
+                                                        "if": {
+                                                            "$gt": ["$$newValue", 0]
+                                                        },
+                                                        "then": {
+                                                            "prevValue": "$$this",
+                                                            "calculatedValues": {
+                                                                "$sum": [
+                                                                    "$$value.calculatedValues", "$$newValue"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "else": {
+                                                            "prevValue": "$$this",
+                                                            "calculatedValues": "$$value.calculatedValues"
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "$project": {
+                        "activity_id": "$activity_id",
+                        "altitudeGained": "$result"
+                        # "altitudeGained": "$result.calculatedValues"
+
+                    }
+                },
+                {
+                    "$lookup": {
+                        "from": collection_activity,
+                        "localField": "activity_id",
+                        "foreignField": "_id",
+                        "as": "joined_table"
+                    }
+                },
+                {
+                    "$unwind": "$joined_table"
+                },
+                {
+                    "$match": {"joined_table.altitudeGained": {"$gt": 0}}
+                },
+                {
+                    "$group": {
+                        "_id": "$joined_table.user_id",
+                        "altitudeGained": {"$sum": "joined_table.altitudeGained"}
+                    }
+                },
+                {
+                    "$project": {
+                        "user_id": "_id",
+                        "metersGained": {"$multiply": ["$altitudeGained", 0.3048]}
+                    }
+                }
+            ])
+
+            for i in activity_altitudes:
+                pprint(i)
+
+            '''
+            if activity_altitudes['user_id'] in user_altitudes_dict:
+                user_altitudes_dict[activity_altitudes['user_id']] += activity_altitudes['metersGained']
+            else:
+                user_altitudes_dict[activity_altitudes['user_id']] = activity_altitudes['metersGained']
+            '''
+
+        for key,value in user_altitudes_dict.items():
+            print("user_id: "+key+"\t"+"metersGained: "+str(value))
+
+
 
 def main():
     executor = None
@@ -253,8 +374,9 @@ def main():
         #executor.query_two(collection_name="Activity")
         #executor.query_four(collection_name="Activity")
         #executor.query_six(collection_activity="Activity", collection_trackpoint="TrackPoint")
-        executor.query_eight(collection_name="Activity")
+        #executor.query_eight(collection_name="Activity")
         #executor.query_ten(collection_activity="Activity", collection_trackpoint="TrackPoint")
+        executor.query_eleven(collection_activity="Activity", collection_trackpoint="TrackPoint")
 
 
 
