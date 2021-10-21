@@ -2,7 +2,7 @@ import mysql.connector as mysql
 from decouple import config
 
 
-class DbConnector:
+class DbConnector_MySQL:
     """
     Connects to the MySQL server on the Ubuntu virtual machine.
     Connector needs HOST, DATABASE, USER and PASSWORD to connect,
@@ -46,4 +46,5 @@ class DbConnector:
         # close the DB connection
         self.db_connection.close()
         print("\n-----------------------------------------------")
-        print("Connection to %s is closed" % self.db_connection.get_server_info())
+        print("Connection to %s is closed" %
+              self.db_connection.get_server_info())

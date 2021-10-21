@@ -1,4 +1,4 @@
-from DbConnector import DbConnector
+from DbConnector_MySQL import DbConnector_MySQL
 from decouple import config
 from tabulate import tabulate
 from haversine import haversine
@@ -9,7 +9,7 @@ import pandas as pd
 
 class QueryExecutor:
     def __init__(self):
-        self.connection = DbConnector()
+        self.connection = DbConnector_MySQL()
         self.db_connection = self.connection.db_connection
         self.cursor = self.connection.cursor
 
@@ -28,7 +28,8 @@ class QueryExecutor:
         )
 
         self.cursor.execute(
-            query % (table_name_users, table_name_activities, table_name_trackpoints)
+            query % (table_name_users, table_name_activities,
+                     table_name_trackpoints)
         )
         rows = self.cursor.fetchall()
         print(tabulate(rows, headers=self.cursor.column_names))
@@ -120,7 +121,8 @@ class QueryExecutor:
             "AND ABS(TIMESTAMPDIFF(SECOND,t1.date_time, t2.date_time)) <= 60"
         )
 
-        self.cursor.execute(query % (table_name_activities, table_name_trackpoints))
+        self.cursor.execute(
+            query % (table_name_activities, table_name_trackpoints))
         rows = self.cursor.fetchall()
         print(tabulate(rows, headers=self.cursor.column_names))
 
@@ -136,6 +138,7 @@ class QueryExecutor:
             users += len(value)
 
         users = users / 2
+
         print(users)
         return users
 
@@ -236,7 +239,8 @@ class QueryExecutor:
             "ORDER BY date_time ASC"
         )
 
-        self.cursor.execute(query % (table_name_activities, table_name_trackpoints))
+        self.cursor.execute(
+            query % (table_name_activities, table_name_trackpoints))
         rows = self.cursor.fetchall()
 
         activity_dict = dict()
@@ -274,7 +278,8 @@ class QueryExecutor:
             "LIMIT 20"
         )
 
-        self.cursor.execute(query % (table_name_activities, table_name_trackpoints))
+        self.cursor.execute(
+            query % (table_name_activities, table_name_trackpoints))
         rows = self.cursor.fetchall()
         print(tabulate(rows, headers=self.cursor.column_names))
         return rows
@@ -292,7 +297,8 @@ class QueryExecutor:
             "GROUP BY user_id HAVING NumInvalid >= 1 "
         )
 
-        self.cursor.execute(query % (table_name_activity, table_name_trackpoint))
+        self.cursor.execute(
+            query % (table_name_activity, table_name_trackpoint))
         rows = self.cursor.fetchall()
         print(tabulate(rows, headers=self.cursor.column_names))
         return rows
