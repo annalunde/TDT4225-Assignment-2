@@ -284,7 +284,7 @@ class QueryExecutor:
                                             "$let": {
                                                 "vars": {
                                                     "newValue": {
-                                                        "$subtract": ["$$value.prevValue", "$$this"]
+                                                        "$subtract": ["$$this", "$$value.prevValue"]
                                                     }
                                                 },
                                                 "in": {
@@ -316,16 +316,13 @@ class QueryExecutor:
                 },
                 {
                     "$project": {
-                        "activity_id": "$activity_id",
-                        "altitudeGained": "$result"
-                        # "altitudeGained": "$result.calculatedValues"
-
+                        "altitudeGained": "$result.calculatedValues"
                     }
                 },
                 {
                     "$lookup": {
                         "from": collection_activity,
-                        "localField": "activity_id",
+                        "localField": "_id",
                         "foreignField": "_id",
                         "as": "joined_table"
                     }
@@ -334,31 +331,20 @@ class QueryExecutor:
                     "$unwind": "$joined_table"
                 },
                 {
-                    "$match": {"joined_table.altitudeGained": {"$gt": 0}}
-                },
-                {
-                    "$group": {
-                        "_id": "$joined_table.user_id",
-                        "altitudeGained": {"$sum": "joined_table.altitudeGained"}
-                    }
-                },
-                {
                     "$project": {
-                        "user_id": "_id",
+                        "user_id": "$joined_table.user_id",
                         "metersGained": {"$multiply": ["$altitudeGained", 0.3048]}
                     }
                 }
             ])
 
-            for i in activity_altitudes:
-                pprint(i)
+            activity_altitudes_list = list(activity_altitudes)
 
-            '''
-            if activity_altitudes['user_id'] in user_altitudes_dict:
-                user_altitudes_dict[activity_altitudes['user_id']] += activity_altitudes['metersGained']
-            else:
-                user_altitudes_dict[activity_altitudes['user_id']] = activity_altitudes['metersGained']
-            '''
+            for i in range(len(activity_altitudes_list)):
+                if activity_altitudes_list[i]['user_id'] in user_altitudes_dict:
+                    user_altitudes_dict[activity_altitudes_list[i]['user_id']] += activity_altitudes_list[i]['metersGained']
+                else:
+                    user_altitudes_dict[activity_altitudes_list[i]['user_id']] = activity_altitudes_list[i]['metersGained']
 
         for key,value in user_altitudes_dict.items():
             print("user_id: "+key+"\t"+"metersGained: "+str(value))
