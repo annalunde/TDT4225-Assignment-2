@@ -155,7 +155,7 @@ class Program:
                         tp[0][-2] + " " + tp[0][-1], "%Y-%m-%d %H:%M:%S"
                     )
                     element = {"_id": counter_trckpt, "activity_id": activity_id, "lat": lat, "lon": lon,
-                               "altitude": altitude, "date_days": date_days, "date_time": date_time, }
+                               "altitude": altitude, "date_days": date_days, "date_time": date_time, "user_id": user_id}
                     data.append(element)
                     counter_trckpt += 1
 
@@ -183,12 +183,7 @@ def main():
     try:
         program = Program()
 
-        program.drop_coll(collection_name="User")
-
-        program.show_coll()
-
-        print("starting")
-
+        """
         program.create_coll(collection_name="User")
         program.insert_user_documents(collection_name="User")
         program.fetch_documents(collection_name="User")
@@ -203,6 +198,8 @@ def main():
         program.create_coll(collection_name="Activity")
         program.insert_activity_documents(collection_name="Activity")
         # program.fetch_documents(collection_name="Activity")
+        """
+        program.drop_coll(collection_name="TrackPoint")
 
         print("starting trackpoints")
 
