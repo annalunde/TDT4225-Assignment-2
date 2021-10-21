@@ -69,8 +69,7 @@ class QueryExecutor:
                 }
             }
         ])
-        for a in min_max_avg:
-            pprint(a)
+        pprint.pprint(list(min_max_avg))
 
         return min_max_avg
 
@@ -96,11 +95,11 @@ class QueryExecutor:
         return top_ten_users
 
     def query_four(self, collection_name):
+        print("WITHIN QYERTY")
         """
         Find the number of users that have started the activity in one day and ended the activity the next day.
         NOTE : We assuming counting number of distinct users
         """
-
         users = self.db[collection_name].aggregate([
             {
                 "$project": {
@@ -132,7 +131,8 @@ class QueryExecutor:
                 }
             }
         ])
-
+        print("finito wuerg", users)
+        pprint.pprint(list(users))
         for u in users:
             pprint(u)
 
@@ -175,10 +175,21 @@ class QueryExecutor:
             {
                 "$project": {
                     "activity_id": "$activity_id",
+                    "user_id": "$user_id",
                     "lat": "$lat",
                     "lon": "$lon",
                     "date_time": "$date_time",
                     "date_covid": {"$dateFromString": {"dateString": "2008-08-24 15:38:00"}},
+                }
+            },
+            {
+                "$project": {
+                    "activity_id": "$activity_id",
+                    "lat": "$lat",
+                    "lon": "$lon",
+                    "date_time": "$date_time",
+                    "date_covid": "$date_covid",
+                    "user_id": "$user_id",
                     "time_difference": {"$abs": {"$divide": [{"$subtract": ["$date_covid", "$date_time"]}, 1000]}}
                 }
             },
@@ -239,14 +250,14 @@ class QueryExecutor:
 
         return l
 
-    def query_eight(self, collection_name):
+    def query_eight(self, collection_name_activities):
         """
         Find all types of transportation modes and count how many distinct users that
         have used the different transportation modes. Do not count the rows where the
         transportation mode is null.
         """
 
-        transportation_modes = self.db[collection_name].aggregate([
+        transportation_modes = self.db[collection_name_activities].aggregate([
             {
                 "$match": {"transportation_mode": {"$ne": None}}
             },
@@ -268,8 +279,7 @@ class QueryExecutor:
 
         ])
 
-        for mode in transportation_modes:
-            pprint(mode)
+        pprint.pprint(list(transportation_modes))
 
         return transportation_modes
 
@@ -388,6 +398,7 @@ class QueryExecutor:
                 "$sort": {"date_time": -1}
             }
         ])
+        pprint.pprint(list(activities))
 
         activities_list = list(activities)
 
@@ -412,12 +423,21 @@ class QueryExecutor:
     def query_eleven(self, collection_activity, collection_trackpoint):
         user_altitudes_dict = dict()
 
-        for activity_id in range(274, 275):
-            print(activity_id)
+        for user in range(0, 182):
+            user = str(user) if user >= 100 else "0" + str(user)
+            user = user if int(user) >= 10 else "0" + user
+            print("user", user)
 
             activity_altitudes = self.db[collection_trackpoint].aggregate([
                 {
-                    "$match": {"activity_id": {"$eq": activity_id}}
+                    "$match": {"user_id": {"$eq": user}}
+                },
+                {
+                    "$project": {
+                        "user_id": "$user_id",
+                        "activity_id": "$activity_id",
+                        "altitude": "$altitude",
+                    }
                 },
                 {
                     "$match": {"altitude": {"$ne": -777}}
@@ -434,13 +454,13 @@ class QueryExecutor:
                             "$reduce": {
                                 "input": "$altitude_array",
                                 "initialValue": {
-                                    "prevValue": -1,
+                                    "prevValue": None,
                                     "calculatedValues": 0
                                 },
                                 "in": {
                                     "$cond": {
                                         "if": {
-                                            "$eq": ["$$value.prevValue", -1]
+                                            "$eq": ["$$value.prevValue", None]
                                         },
                                         "then": {
                                             "prevValue": "$$this",
@@ -481,30 +501,21 @@ class QueryExecutor:
                     }
                 },
                 {
-                    "$project": {
-                        "altitudeGained": "$result.calculatedValues"
+                    "$group": {
+                        "_id": "$user_id",
+                        "totalAltitudes": {"$sum": "$result.calculatedValues"}
                     }
                 },
                 {
-                    "$lookup": {
-                        "from": collection_activity,
-                        "localField": "_id",
-                        "foreignField": "_id",
-                        "as": "joined_table"
-                    }
-                },
-                {
-                    "$unwind": "$joined_table"
-                },
-                {
                     "$project": {
-                        "user_id": "$joined_table.user_id",
-                        "metersGained": {"$multiply": ["$altitudeGained", 0.3048]}
+                        "user_id": user,
+                        "metersGained": {"$multiply": ["$totalAltitudes", 0.3048]}
                     }
                 }
             ])
 
             activity_altitudes_list = list(activity_altitudes)
+            pprint(activity_altitudes_list)
 
             for i in range(len(activity_altitudes_list)):
                 if activity_altitudes_list[i]['user_id'] in user_altitudes_dict:
@@ -514,8 +525,12 @@ class QueryExecutor:
                     user_altitudes_dict[activity_altitudes_list[i]['user_id']
                                         ] = activity_altitudes_list[i]['metersGained']
 
-        for key, value in user_altitudes_dict.items():
-            print("user_id: "+key+"\t"+"metersGained: "+str(value))
+        sort = sorted(user_altitudes_dict.items(),
+                      key=lambda x: x[1], reverse=True)
+
+        for i in range(0, 20):
+            print("user_id: " + sort[i][0] + "\t" +
+                  "metersGained: " + str(sort[i][1]))
 
     def query_twelve(self, collection_name_trackpoints):
         """
@@ -525,7 +540,6 @@ class QueryExecutor:
         for user in range(0, 182):
             user = str(user) if user >= 100 else "0" + str(user)
             user = user if int(user) >= 10 else "0" + user
-            print(user)
             invalid_activities = self.db[collection_name_trackpoints].aggregate([
                 {"$match": {"user_id": {"$eq": user}}},
                 {
@@ -567,7 +581,6 @@ class QueryExecutor:
                                         "newValue": {
                                             # calculate the diff
                                             "$divide": [{"$subtract": ["$$this", "$$value.prevValue"]}, 60 * 1000]
-                                            # "$subtract": ['$$this', '$$value.prevValue'],
                                         }
                                     },
                                     "in": {
@@ -591,15 +604,13 @@ class QueryExecutor:
                 {
                     # restructure the output documents
                     "$project": {
-                        # "initialValues": '$date_time_array',
                         "calculatedValues": '$result.calculatedValues',
                         "user_id": "$user_id",
                         "activity_id": "$activity_id",
-                        # "tid": "$data._id"
                     }
                 },
                 {"$match": {"calculatedValues": {"$elemMatch": {"$gte": 5}}}},
-                {"$group":  {"_id": "$user_id", "count": {"$sum": 1}}},
+                {"$group":  {"_id": user, "count": {"$sum": 1}}},
                 {"$match": {"count": {"$gte": 1}}}
             ], allowDiskUse=True)
             pprint.pprint(list(invalid_activities))
@@ -616,31 +627,40 @@ def main():
         print("Executing Queries: ")
 
         """
-        _ = executor.query_one(
+        executor.query_one(
             collection_name_users="User",
             collection_name_activities="Activity",
             collection_name_trackpoints="TrackPoint",
         )
+
         executor.query_two(collection_name="Activity")
+
         executor.query_three(collection_name_activities="Activity")
+
         executor.query_four(collection_name="Activity")
+
         executor.query_five(collection_name_activities="Activity")
-        """
+
         executor.query_six(collection_trackpoint="TrackPoint")
-        """
+
         executor.query_seven(collection_name_activities="Activity")
-        executor.query_eight(collection_name="Activity")
+
+        executor.query_eight(collection_name_activities="Activity")
+
         executor.query_nine_a(collection_name_activities="Activity")
         executor.query_nine_b(collection_name_activities="Activity")
+       
         executor.query_ten(collection_activity="Activity",
                            collection_trackpoint="TrackPoint")
+       
         executor.query_eleven(collection_activity="Activity",
                               collection_trackpoint="TrackPoint")
-
+        
         executor.query_twelve(
             collection_name_trackpoints="TrackPoint"
         )
         """
+
     except Exception as e:
         print("ERROR: Failed to use database:", e)
     finally:

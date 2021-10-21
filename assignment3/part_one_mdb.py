@@ -33,7 +33,7 @@ class Program:
 
                 for user_id in dirs:
                     has_labels = user_id in labeled_ids
-                    element = {"has_labels": has_labels}
+                    element = {"_id": user_id, "has_labels": has_labels}
                     # NOTE can use collection.insert_many(element)
                     collection.insert_one(element)
                 break
@@ -182,14 +182,14 @@ def main():
     program = None
     try:
         program = Program()
-
         """
+        program.drop_coll(collection_name="User")
         program.create_coll(collection_name="User")
         program.insert_user_documents(collection_name="User")
         program.fetch_documents(collection_name="User")
 
         program.show_coll()
-
+        
         program.drop_coll(collection_name="Activity")
         program.drop_coll(collection_name="TrackPoint")
 
