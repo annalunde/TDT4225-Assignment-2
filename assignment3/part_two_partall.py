@@ -180,16 +180,6 @@ class QueryExecutor:
         Find the total distance (in km) walked in 2008, by user with id=112.
         """
 
-        '''
-        query = (
-            "SELECT Activity.id,lat,lon "
-            "FROM %s INNER JOIN %s on Activity.id = TrackPoint.activity_id "
-            "WHERE user_id='112' and "
-            "EXTRACT(YEAR FROM date_time) = 2008 "
-            "and transportation_mode='walk' "
-            "ORDER BY date_time ASC"
-        )
-        '''
         activities = self.db[collection_activity].aggregate([
             {
                 "$match": {"user_id": {"$eq": "112"}}
@@ -246,12 +236,21 @@ class QueryExecutor:
     def query_eleven(self, collection_activity, collection_trackpoint):
         user_altitudes_dict = dict()
 
-        for activity_id in range(274,275):
-            print(activity_id)
+        for user in range(0,182):
+            user = str(user) if user >= 100 else "0" + str(user)
+            user = user if int(user) >= 10 else "0" + user
+            print("user", user)
 
             activity_altitudes = self.db[collection_trackpoint].aggregate([
                 {
-                    "$match": {"activity_id": {"$eq": activity_id}}
+                    "$match": {"user_id": {"$eq": user}}
+                },
+                {
+                    "$project": {
+                        "user_id": "$user_id",
+                        "activity_id": "$activity_id",
+                        "altitude": "$altitude",
+                    }
                 },
                 {
                     "$match": {"altitude": {"$ne": -777}}
@@ -268,13 +267,13 @@ class QueryExecutor:
                             "$reduce": {
                                 "input": "$altitude_array",
                                 "initialValue": {
-                                    "prevValue": -1,
+                                    "prevValue": None,
                                     "calculatedValues": 0
                                 },
                                 "in": {
                                     "$cond": {
                                         "if": {
-                                            "$eq": ["$$value.prevValue", -1]
+                                            "$eq": ["$$value.prevValue", None]
                                         },
                                         "then": {
                                             "prevValue": "$$this",
@@ -315,30 +314,22 @@ class QueryExecutor:
                     }
                 },
                 {
-                    "$project": {
-                        "altitudeGained": "$result.calculatedValues"
+                    "$group": {
+                        "_id": "$user_id",
+                        "totalAltitudes": {"$sum": "$result.calculatedValues"}
                     }
                 },
                 {
-                    "$lookup": {
-                        "from": collection_activity,
-                        "localField": "_id",
-                        "foreignField": "_id",
-                        "as": "joined_table"
-                    }
-                },
-                {
-                    "$unwind": "$joined_table"
-                },
-                {
                     "$project": {
-                        "user_id": "$joined_table.user_id",
-                        "metersGained": {"$multiply": ["$altitudeGained", 0.3048]}
+                        "user_id": user,
+                        "metersGained": {"$multiply": ["$totalAltitudes", 0.3048]}
                     }
                 }
             ])
 
             activity_altitudes_list = list(activity_altitudes)
+            pprint(activity_altitudes_list)
+
 
             for i in range(len(activity_altitudes_list)):
                 if activity_altitudes_list[i]['user_id'] in user_altitudes_dict:
@@ -346,9 +337,10 @@ class QueryExecutor:
                 else:
                     user_altitudes_dict[activity_altitudes_list[i]['user_id']] = activity_altitudes_list[i]['metersGained']
 
-        for key,value in user_altitudes_dict.items():
-            print("user_id: "+key+"\t"+"metersGained: "+str(value))
+        sort = sorted(user_altitudes_dict.items(), key=lambda x: x[1], reverse=True)
 
+        for i in range(0, 20):
+            print("user_id: " + sort[i][0]+ "\t" + "metersGained: " + str(sort[i][1]))
 
 
 def main():
