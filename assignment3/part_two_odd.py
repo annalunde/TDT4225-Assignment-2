@@ -6,6 +6,7 @@ import datetime
 import numpy as np
 import pandas as pd
 import pprint
+from tqdm import tqdm  # for progressbar on importing Trackpoint data
 
 
 class QueryExecutor:
@@ -207,11 +208,9 @@ class QueryExecutor:
 
         invalid_users = dict()
 
-        for user in range(0, 182):
+        for user in tqdm(range(0, 182), colour="#39ff14"):
             user = str(user) if user >= 100 else "0" + str(user)
             user = user if int(user) >= 10 else "0" + user
-            print(user)
-            print("user", user)
             invalid_activities = self.db[collection_name_activities].aggregate([
                 {"$match": {"user_id": {"$eq": user}}},
                 {
