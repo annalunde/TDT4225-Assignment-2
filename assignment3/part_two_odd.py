@@ -207,10 +207,13 @@ class QueryExecutor:
 
         invalid_users = dict()
 
-        for user in range(107, 183):
-            print("user", user)  # NOTE: må legge til 00 før 1 og 2-sifret tall
+        for user in range(0, 182):
+            user = str(user) if user >= 100 else "0" + str(user)
+            user = user if int(user) >= 10 else "0" + user
+            print(user)
+            print("user", user)
             invalid_activities = self.db[collection_name_activities].aggregate([
-                {"$match": {"user_id": {"$eq": str(user)}}},
+                {"$match": {"user_id": {"$eq": user}}},
                 {
                     "$lookup": {
                         "from": collection_name_trackpoints,
@@ -291,12 +294,8 @@ class QueryExecutor:
                     }
                 },
                 {"$match": {"calculatedValues": {"$elemMatch": {"$gte": 5}}}},
-                #{"$group":  {"_id": "$user_id"}},
-                #{"$group": {"_id": "$activity_id"}},
-                #{"$group": {"_id": 1, "count": {"$sum": 1}}},
-                #{"$match": {"count": {"$gte": 1}}}
-
-
+                {"$group":  {"_id": "$user_id", "count": {"$sum": 1}}},
+                {"$match": {"count": {"$gte": 1}}}
             ])
             pprint.pprint(list(invalid_activities))
 
