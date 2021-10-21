@@ -205,19 +205,12 @@ class QueryExecutor:
          - An invalid activity is defined as an activity with consecutive trackpoints where the timestamps deviate with at least 5 minutes.
         """
 
-        """
-        query = (
-            "data as (SELECT user_id, date_time, TrackPoint.id as tid, activity_id, LEAD(date_time)
-            OVER(PARTITION BY activity_id ORDER BY TrackPoint.id ASC) AS next_date_time, TIMESTAMPDIFF(MINUTE, date_time,
-            LEAD(date_time) OVER(PARTITION BY activity_id ORDER BY TrackPoint.id ASC)) as difference) "
-        )
-        """
         invalid_users = dict()
 
-        for user in range(1, 183):
-            print("user", user)
+        for user in range(107, 183):
+            print("user", user)  # NOTE: må legge til 00 før 1 og 2-sifret tall
             invalid_activities = self.db[collection_name_activities].aggregate([
-                {"$match": {"user_id": {"eq": user}}},
+                {"$match": {"user_id": {"$eq": str(user)}}},
                 {
                     "$lookup": {
                         "from": collection_name_trackpoints,
@@ -226,9 +219,10 @@ class QueryExecutor:
                         "as": "data"
                     }
                 },
+                {"$unwind": "$data"},
                 {
                     "$project": {
-                        "user_id": user,
+                        "user_id": "$data.user_id",
                         "activity_id": "$data.activity_id",
                         "date_time": "$data.date_time",
                         "tid": "$data._id"
@@ -262,7 +256,7 @@ class QueryExecutor:
                                 # and it is possible to calculate the diff now
                                 "$let": {
                                     "vars": {
-                                        "newValue":  {
+                                        "newValue": {
                                             # calculate the diff
                                             "$divide": [{"$subtract": ["$$this", "$$value.prevValue"]}, 60 * 1000]
                                             # "$subtract": ['$$this', '$$value.prevValue'],
@@ -289,32 +283,24 @@ class QueryExecutor:
                 {
                     # restructure the output documents
                     "$project": {
-                        "initialValues": '$date_time_array',
+                        # "initialValues": '$date_time_array',
                         "calculatedValues": '$result.calculatedValues',
                         "user_id": "$user_id",
                         "activity_id": "$data.activity_id",
-                        "tid": "$data._id"
+                        # "tid": "$data._id"
                     }
                 },
-                {"$match": {"calculatedValues": {"$gte": 5}}},
-                {"$group":  {"_id": "$user_id"}},
-                # {"$group": {"_id": "$activity_id"}},
-                {"$group": {"_id": 1, "count": {"$sum": 1}}},
-                {"$match": {"count": {"$gte": 1}}}
+                {"$match": {"calculatedValues": {"$elemMatch": {"$gte": 5}}}},
+                #{"$group":  {"_id": "$user_id"}},
+                #{"$group": {"_id": "$activity_id"}},
+                #{"$group": {"_id": 1, "count": {"$sum": 1}}},
+                #{"$match": {"count": {"$gte": 1}}}
+
 
             ])
             pprint.pprint(list(invalid_activities))
 
         # df = pd.DataFrame(list(invalid_activities))
-        """
-        all_df_real=[]
-        for doc in list(invalid_activities)[2]:
-            # print("doc", doc)
-            single_real_df=pd.DataFrame(
-                doc['user_id']['activity_id']['date_time']["tid"])
-            print(single_real_df)
-            all_df_real.append(single_real_df)
-        """
         # result = pd.concat(all_df_real)
         # print(all_df_real)
 
