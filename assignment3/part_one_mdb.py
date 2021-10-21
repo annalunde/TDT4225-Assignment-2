@@ -198,7 +198,7 @@ def main():
         program.create_coll(collection_name="Activity")
         program.insert_activity_documents(collection_name="Activity")
         # program.fetch_documents(collection_name="Activity")
-        """
+        
         program.drop_coll(collection_name="TrackPoint")
 
         print("starting trackpoints")
@@ -208,8 +208,8 @@ def main():
         program.insert_trackpoint_data(collection_name="TrackPoint")
 
         program.show_coll()
-
-        # program.fetch_documents(collection_name="TrackPoint")
+        """
+        program.fetch_documents(collection_name="TrackPoint")
 
     except Exception as e:
         print("ERROR: Failed to use database:", e)
