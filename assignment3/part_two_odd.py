@@ -206,11 +206,10 @@ class QueryExecutor:
          - An invalid activity is defined as an activity with consecutive trackpoints where the timestamps deviate with at least 5 minutes.
         """
 
-        invalid_users = dict()
-
-        for user in tqdm(range(0, 182), colour="#39ff14"):
+        for user in range(50, 182):  # tqdm(, colour="#39ff14"):
             user = str(user) if user >= 100 else "0" + str(user)
             user = user if int(user) >= 10 else "0" + user
+            print(user)
             invalid_activities = self.db[collection_name_activities].aggregate([
                 {"$match": {"user_id": {"$eq": user}}},
                 {
@@ -297,10 +296,6 @@ class QueryExecutor:
                 {"$match": {"count": {"$gte": 1}}}
             ])
             pprint.pprint(list(invalid_activities))
-
-        # df = pd.DataFrame(list(invalid_activities))
-        # result = pd.concat(all_df_real)
-        # print(all_df_real)
 
         return invalid_activities
 
