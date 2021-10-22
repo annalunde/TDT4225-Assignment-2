@@ -6,7 +6,6 @@ import datetime
 import numpy as np
 import pandas as pd
 import pprint
-from tqdm import tqdm  # for progressbar on importing Trackpoint data
 
 
 class QueryExecutor:
@@ -95,7 +94,6 @@ class QueryExecutor:
         return top_ten_users
 
     def query_four(self, collection_name):
-        print("WITHIN QYERTY")
         """
         Find the number of users that have started the activity in one day and ended the activity the next day.
         NOTE : We assuming counting number of distinct users
@@ -131,7 +129,6 @@ class QueryExecutor:
                 }
             }
         ])
-        print("finito wuerg", users)
         pprint.pprint(list(users))
         for u in users:
             pprint(u)
@@ -398,7 +395,6 @@ class QueryExecutor:
                 "$sort": {"date_time": -1}
             }
         ])
-        pprint.pprint(list(activities))
 
         activities_list = list(activities)
 
@@ -515,7 +511,7 @@ class QueryExecutor:
             ])
 
             activity_altitudes_list = list(activity_altitudes)
-            pprint(activity_altitudes_list)
+            pprint.pprint(activity_altitudes_list)
 
             for i in range(len(activity_altitudes_list)):
                 if activity_altitudes_list[i]['user_id'] in user_altitudes_dict:
@@ -646,13 +642,13 @@ def main():
         executor.query_seven(collection_name_activities="Activity")
 
         executor.query_eight(collection_name_activities="Activity")
-
+        
         executor.query_nine_a(collection_name_activities="Activity")
         executor.query_nine_b(collection_name_activities="Activity")
-       
+        """
         executor.query_ten(collection_activity="Activity",
                            collection_trackpoint="TrackPoint")
-       
+        """
         executor.query_eleven(collection_activity="Activity",
                               collection_trackpoint="TrackPoint")
         
