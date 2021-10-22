@@ -134,10 +134,12 @@ class QueryExecutor:
                 else:
                     user_dict[row[0]] = [row[3]]
         users = 0
-        for value in user_dict.values():
+        for value in users_dict.values():
             users += len(value)
 
         users = users / 2
+
+        print(users)
         return users
 
     def query_seven(self, table_name_activities):
@@ -317,18 +319,14 @@ def main():
 
         print("Executing Queries: ")
 
-        '''
         _ = executor.query_one(
             table_name_users="User",
             table_name_activities="Activity",
             table_name_trackpoints="TrackPoint",
         )
-
         _ = executor.query_two(table_name="Activity")
         _ = executor.query_three(table_name_activities="Activity")
-        '''
         _ = executor.query_four(table_name="Activity")
-        '''
         _ = executor.query_five(table_name_activities="Activity")
         _ = executor.query_six(
             table_name_activities="Activity", table_name_trackpoints="TrackPoint"
@@ -346,8 +344,6 @@ def main():
         _ = executor.query_twelve(
             table_name_activity="Activity", table_name_trackpoint="TrackPoint"
         )
-        '''
-
 
     except Exception as e:
         print("ERROR: Failed to use database:", e)

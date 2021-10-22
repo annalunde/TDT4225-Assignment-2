@@ -24,15 +24,6 @@ class Program:
             collection = self.db.create_collection(collection_name)
             print('Created collection: ', collection)
 
-        """
-        User collection:
-
-        User = { 
-        _id: ‘00-181’ (string) 
-        has_labels: True/False (boolean) 
-        } 
-        """
-
     def insert_user_documents(self, collection_name):
         collection = self.db[collection_name]
 
@@ -42,7 +33,7 @@ class Program:
 
                 for user_id in dirs:
                     has_labels = user_id in labeled_ids
-                    element = {"has_labels": has_labels}
+                    element = {"_id": user_id, "has_labels": has_labels}
                     # NOTE can use collection.insert_many(element)
                     collection.insert_one(element)
                 break
@@ -80,7 +71,6 @@ class Program:
 
                     key = user_id + "-" + f
                     activity_ids[key] = counter
-                    counter += 1
 
                     df2 = df.iloc[[0, -1]]
                     d_start = df2.iloc[0, 0].split(",")
@@ -120,11 +110,13 @@ class Program:
                     element = {"_id": counter, "transportation_mode": transportation_mode,
                                "start_date_time": start_time, "end_date_time": end_time, "user_id": user_id, }
                     collection.insert_one(element)
+                    counter += 1
+
         json.dump(activity_ids, open(config("FILEPATH_ACTIVITY_IDS"), "w"))
 
     def insert_trackpoint_data(self, collection_name):
         collection = self.db[collection_name]
-        counter = 1
+        counter_trckpt = 1
         dirs = [
             directory
             for directory in listdir(config("FILEPATH"))
@@ -162,10 +154,10 @@ class Program:
                     date_time = datetime.datetime.strptime(
                         tp[0][-2] + " " + tp[0][-1], "%Y-%m-%d %H:%M:%S"
                     )
-                    element = {"_id": counter, "activity_id": activity_id, "lat": lat, "lon": lon,
-                               "altitude": altitude, "date_days": date_days, "date_time": date_time, }
+                    element = {"_id": counter_trckpt, "activity_id": activity_id, "lat": lat, "lon": lon,
+                               "altitude": altitude, "date_days": date_days, "date_time": date_time, "user_id": user_id}
                     data.append(element)
-                    counter += 1
+                    counter_trckpt += 1
 
                 # inserts up to 2500 documents at a time, to increase efficiency
                 collection.insert_many(data)
@@ -190,26 +182,35 @@ def main():
     program = None
     try:
         program = Program()
-
-        # program.create_coll(collection_name="User")
-        # program.show_coll()
-        # program.insert_user_documents(collection_name="User")
-        #program.fetch_documents(collection_name="User")
-
-        # program.create_coll(collection_name="Activity")
-        # program.show_coll()
-        # program.insert_activity_documents(collection_name="Activity")
-        #program.fetch_documents(collection_name="Activity")
-
-        #program.drop_coll(collection_name="TrackPoint")
-
-        #program.create_coll(collection_name="TrackPoint")
-        #program.show_coll()
-        #program.insert_trackpoint_data(collection_name="TrackPoint")
-
-        program.fetch_documents(collection_name="TrackPoint")
+        """
+        program.drop_coll(collection_name="User")
+        program.create_coll(collection_name="User")
+        program.insert_user_documents(collection_name="User")
+        program.fetch_documents(collection_name="User")
 
         program.show_coll()
+        
+        program.drop_coll(collection_name="Activity")
+        program.drop_coll(collection_name="TrackPoint")
+
+        program.show_coll()
+
+        program.create_coll(collection_name="Activity")
+        program.insert_activity_documents(collection_name="Activity")
+        # program.fetch_documents(collection_name="Activity")
+        
+        program.drop_coll(collection_name="TrackPoint")
+
+        print("starting trackpoints")
+
+        program.create_coll(collection_name="TrackPoint")
+        # program.show_coll()
+        program.insert_trackpoint_data(collection_name="TrackPoint")
+
+        program.show_coll()
+        """
+        program.fetch_documents(collection_name="TrackPoint")
+
     except Exception as e:
         print("ERROR: Failed to use database:", e)
     finally:
